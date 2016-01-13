@@ -1,6 +1,6 @@
 # riddler
 
-[![Circle CI](https://circleci.com/gh/jfrazelle/ridder.svg?style=svg)](https://circleci.com/gh/jfrazelle/ridder)
+[![Circle CI](https://circleci.com/gh/jfrazelle/riddler.svg?style=svg)](https://circleci.com/gh/jfrazelle/riddler)
 
 
 `docker inspect` to
