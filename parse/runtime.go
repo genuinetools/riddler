@@ -133,6 +133,7 @@ func RuntimeConfig(c types.ContainerJSON) (*specs.LinuxRuntimeSpec, error) {
 		if mount.Mode != "" {
 			opt = append(opt, mount.Mode)
 		}
+		opt = append(opt, "rbind")
 		config.Mounts[mount.Destination] = specs.Mount{
 			Type:    "bind",
 			Source:  mount.Source,
