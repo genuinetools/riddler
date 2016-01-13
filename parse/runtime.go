@@ -47,6 +47,9 @@ func RuntimeConfig(c types.ContainerJSON) (*specs.LinuxRuntimeSpec, error) {
 					Options: []string{"nosuid", "noexec", "nodev", "relatime", "ro"},
 				},
 			},
+			Hooks: specs.Hooks{
+			// TODO: do hooks
+			},
 		},
 		Linux: specs.LinuxRuntime{
 			Namespaces: []specs.Namespace{
@@ -67,6 +70,20 @@ func RuntimeConfig(c types.ContainerJSON) (*specs.LinuxRuntimeSpec, error) {
 				},
 				{
 					Type: "user",
+				},
+			},
+			UIDMappings: []specs.IDMapping{
+				{
+					HostID:      886432,
+					ContainerID: 0,
+					Size:        65535,
+				},
+			},
+			GIDMappings: []specs.IDMapping{
+				{
+					HostID:      886432,
+					ContainerID: 0,
+					Size:        65535,
 				},
 			},
 			// TODO: add parsing of Ulimits

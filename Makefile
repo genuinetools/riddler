@@ -1,14 +1,19 @@
 # Set an output prefix, which is the local directory if not specified
 PREFIX?=$(shell pwd)
+BUILDTAGS=seccomp apparmor
 
-.PHONY: clean all fmt vet lint build test install
+.PHONY: clean all fmt vet lint build test install static
 .DEFAULT: default
 
 all: clean build fmt lint test vet install
 
 build:
 	@echo "+ $@"
-	@go build ./...
+	@go build -tags "$(BUILDTAGS) cgo" .
+
+static:
+	@echo "+ $@"
+	CGO_ENABLED=1 go build -tags "$(BUILDTAGS) cgo static_build" -ldflags "-w -extldflags -static" -o riddler .
 
 fmt:
 	@echo "+ $@"
@@ -20,7 +25,7 @@ lint:
 
 test: fmt lint vet
 	@echo "+ $@"
-	@go test -v ./...
+	@go test -v -tags "$(BUILDTAGS) cgo" ./...
 
 vet:
 	@echo "+ $@"

@@ -22,7 +22,7 @@ func parseDevices(config *specs.LinuxRuntimeSpec, hc *containertypes.HostConfig)
 		userSpecifiedDevices = append(userSpecifiedDevices, devs...)
 	}
 
-	config.Linux.Devices = mergeDevices(configs.DefaultAllowedDevices, userSpecifiedDevices)
+	config.Linux.Devices = mergeDevices(configs.DefaultSimpleDevices, userSpecifiedDevices)
 
 	return nil
 }

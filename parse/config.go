@@ -2,7 +2,7 @@ package parse
 
 import (
 	"fmt"
-	"syscall"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/daemon/execdriver"
@@ -30,9 +30,8 @@ func Config(c types.ContainerJSON, info types.Info, capabilities []string) (conf
 			},
 			Process: specs.Process{
 				Terminal: c.Config.Tty,
-				User: specs.User{
-					UID: uint32(syscall.Getuid()),
-					GID: uint32(syscall.Getgid()),
+				User:     specs.User{
+				// TODO: user stuffs
 				},
 				Args: append([]string{c.Path}, c.Args...),
 				Env:  c.Config.Env,
@@ -110,6 +109,13 @@ func Config(c types.ContainerJSON, info types.Info, capabilities []string) (conf
 	config.Linux.Capabilities, err = execdriver.TweakCapabilities(capabilities, c.HostConfig.CapAdd.Slice(), c.HostConfig.CapDrop.Slice())
 	if err != nil {
 		return nil, fmt.Errorf("setting capabilities failed: %v", err)
+	}
+	// add CAP_ prefix
+	// TODO: this is awful
+	for i, cap := range config.Linux.Capabilities {
+		if !strings.HasPrefix(cap, "CAP_") {
+			config.Linux.Capabilities[i] = "CAP_" + cap
+		}
 	}
 
 	return config, nil

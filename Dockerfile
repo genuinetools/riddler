@@ -22,6 +22,7 @@ RUN buildDeps=' \
 	&& apk add $buildDeps \
 	&& cd /go/src/github.com/jfrazelle/riddler \
 	&& go get -d -v github.com/jfrazelle/riddler \
+	&& go get -d -v github.com/seccomp/libseccomp-golang \
 	&& go build -o /usr/bin/riddler . \
 	&& apk del $buildDeps \
 	&& rm -rf /var/cache/apk/* \
