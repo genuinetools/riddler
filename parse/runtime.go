@@ -140,6 +140,17 @@ func RuntimeConfig(c types.ContainerJSON) (*specs.LinuxRuntimeSpec, error) {
 		}
 	}
 
+	// add /etc/hosts and /etc/resolv.conf if we should have networking
+	if c.HostConfig.NetworkMode != "none" && c.HostConfig.NetworkMode != "host" {
+		for _, nm := range NetworkMounts {
+			config.Mounts[nm] = specs.Mount{
+				Type:    "bind",
+				Source:  nm,
+				Options: []string{"rbind", "ro"},
+			}
+		}
+	}
+
 	// parse devices
 	if err := parseDevices(config, c.HostConfig); err != nil {
 		return nil, err

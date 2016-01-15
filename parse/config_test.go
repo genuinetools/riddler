@@ -65,6 +65,14 @@ func TestConfig(t *testing.T) {
 					Name: "/etc/localtime",
 					Path: "/etc/localtime",
 				},
+				{
+					Name: "/etc/hosts",
+					Path: "/etc/hosts",
+				},
+				{
+					Name: "/etc/resolv.conf",
+					Path: "/etc/resolv.conf",
+				},
 			},
 		},
 		Linux: specs.Linux{

@@ -19,6 +19,11 @@ const (
 	DefaultApparmorProfile = "docker-default"
 )
 
+var (
+	// NetworkMounts are the mounts needed for default networking.
+	NetworkMounts = []string{"/etc/hosts", "/etc/resolv.conf"}
+)
+
 // Config takes ContainerJSON and Daemon Info and converts it into the opencontainers spec.
 func Config(c types.ContainerJSON, info types.Info, capabilities []string) (config *specs.LinuxSpec, err error) {
 	config = &specs.LinuxSpec{
@@ -103,6 +108,16 @@ func Config(c types.ContainerJSON, info types.Info, capabilities []string) (conf
 			Name: mount.Destination,
 			Path: mount.Destination,
 		})
+	}
+
+	// add /etc/hosts and /etc/resolv.conf if we should have networking
+	if c.HostConfig.NetworkMode != "none" && c.HostConfig.NetworkMode != "host" {
+		for _, nm := range NetworkMounts {
+			config.Mounts = append(config.Mounts, specs.MountPoint{
+				Name: nm,
+				Path: nm,
+			})
+		}
 	}
 
 	// get the capabilities

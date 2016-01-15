@@ -1,6 +1,6 @@
 // +build linux,!seccomp
 
-package native
+package parse
 
 import "github.com/opencontainers/specs"
 
