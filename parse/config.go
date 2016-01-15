@@ -17,6 +17,9 @@ const (
 
 	// DefaultApparmorProfile is docker engine's default apparmor profile for containers.
 	DefaultApparmorProfile = "docker-default"
+
+	// DefaultTerminal is the default TERM for containers.
+	DefaultTerminal = "xterm"
 )
 
 var (
@@ -24,7 +27,6 @@ var (
 	// interactive session.
 	DefaultTerminalEnv = []string{
 		"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-		"TERM=xterm",
 	}
 
 	// DefaultMounts are the default mounts for a container.
@@ -166,6 +168,20 @@ func Config(c types.ContainerJSON, info types.Info, capabilities []string) (conf
 	// default env vars for the terminal to function
 	if config.Spec.Process.Terminal && len(config.Spec.Process.Env) <= 0 {
 		config.Spec.Process.Env = DefaultTerminalEnv
+	}
+	if config.Spec.Process.Terminal {
+		// make sure we have TERM set
+		var termSet bool
+		for _, env := range config.Spec.Process.Env {
+			if strings.HasPrefix(env, "TERM=") {
+				termSet = true
+				break
+			}
+		}
+		if !termSet {
+			// set the term variable
+			config.Spec.Process.Env = append(config.Spec.Process.Env, fmt.Sprintf("TERM=%s", DefaultTerminal))
+		}
 	}
 
 	return config, nil
