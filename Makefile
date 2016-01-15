@@ -5,7 +5,7 @@ BUILDTAGS=seccomp apparmor
 .PHONY: clean all fmt vet lint build test install static
 .DEFAULT: default
 
-all: clean build fmt lint test vet install
+all: clean build static fmt lint test vet
 
 build:
 	@echo "+ $@"
