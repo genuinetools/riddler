@@ -2,7 +2,6 @@ package parse
 
 import (
 	"github.com/docker/engine-api/types"
-	"github.com/opencontainers/runc/libcontainer/apparmor"
 	"github.com/opencontainers/specs"
 )
 
@@ -152,11 +151,12 @@ func RuntimeConfig(c types.ContainerJSON) (*specs.LinuxRuntimeSpec, error) {
 	}
 
 	// set default apparmor profile if possible
-	if config.Linux.ApparmorProfile == "" && apparmor.IsEnabled() && !c.HostConfig.Privileged {
+	if config.Linux.ApparmorProfile == "" && !c.HostConfig.Privileged {
 		config.Linux.ApparmorProfile = DefaultApparmorProfile
 	}
 
 	// TODO: set default seccomp profile if possible
+	config.Linux.Seccomp = defaultSeccompProfile
 
 	return config, nil
 }

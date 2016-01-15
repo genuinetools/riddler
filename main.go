@@ -153,7 +153,7 @@ func writeConfigs(spec *specs.LinuxSpec, rspec *specs.LinuxRuntimeSpec) error {
 		return err
 	}
 
-	data, err := json.MarshalIndent(&spec, "", "\t")
+	data, err := json.MarshalIndent(&spec, "", "    ")
 	if err != nil {
 		return err
 	}
@@ -161,7 +161,7 @@ func writeConfigs(spec *specs.LinuxSpec, rspec *specs.LinuxRuntimeSpec) error {
 		return err
 	}
 
-	rdata, err := json.MarshalIndent(&rspec, "", "\t")
+	rdata, err := json.MarshalIndent(&rspec, "", "    ")
 	if err != nil {
 		return err
 	}
