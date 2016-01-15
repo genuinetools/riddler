@@ -72,12 +72,6 @@ func RuntimeConfig(c types.ContainerJSON) (*specs.LinuxRuntimeSpec, error) {
 		Linux: specs.LinuxRuntime{
 			Namespaces: []specs.Namespace{
 				{
-					Type: "pid",
-				},
-				{
-					Type: "network",
-				},
-				{
 					Type: "ipc",
 				},
 				{
@@ -85,9 +79,6 @@ func RuntimeConfig(c types.ContainerJSON) (*specs.LinuxRuntimeSpec, error) {
 				},
 				{
 					Type: "mount",
-				},
-				{
-					Type: "user",
 				},
 			},
 			UIDMappings: []specs.IDMapping{
@@ -142,6 +133,27 @@ func RuntimeConfig(c types.ContainerJSON) (*specs.LinuxRuntimeSpec, error) {
 		},
 	}
 
+	// check namespaces
+	if !c.HostConfig.NetworkMode.IsHost() {
+		config.Linux.Namespaces = append(config.Linux.Namespaces, specs.Namespace{
+			Type: "network",
+		})
+	}
+	if !c.HostConfig.PidMode.IsHost() {
+		config.Linux.Namespaces = append(config.Linux.Namespaces, specs.Namespace{
+			Type: "pid",
+		})
+	}
+	if !c.HostConfig.NetworkMode.IsHost() && !c.HostConfig.PidMode.IsHost() && !c.HostConfig.Privileged {
+		config.Linux.Namespaces = append(config.Linux.Namespaces, specs.Namespace{
+			Type: "user",
+		})
+	} else {
+		// reset uid and gid mappings
+		config.Linux.UIDMappings = []specs.IDMapping{}
+		config.Linux.GIDMappings = []specs.IDMapping{}
+	}
+
 	// get mounts
 	for _, mount := range c.Mounts {
 		var opt []string
@@ -188,7 +200,7 @@ func RuntimeConfig(c types.ContainerJSON) (*specs.LinuxRuntimeSpec, error) {
 	}
 
 	// add /etc/hosts and /etc/resolv.conf if we should have networking
-	if c.HostConfig.NetworkMode != "none" && c.HostConfig.NetworkMode != "host" {
+	if !c.HostConfig.NetworkMode.IsNone() && !c.HostConfig.NetworkMode.IsHost() {
 		for _, nm := range NetworkMounts {
 			config.Mounts[nm.Path] = specs.Mount{
 				Type:    "bind",
