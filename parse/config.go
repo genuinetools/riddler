@@ -20,6 +20,13 @@ const (
 )
 
 var (
+	// DefaultTerminalEnv holds the minimum terminal env vars needed for an
+	// interactive session.
+	DefaultTerminalEnv = []string{
+		"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+		"TERM=xterm",
+	}
+
 	// DefaultMounts are the default mounts for a container.
 	DefaultMounts = []specs.MountPoint{
 		{
@@ -153,6 +160,12 @@ func Config(c types.ContainerJSON, info types.Info, capabilities []string) (conf
 		if !strings.HasPrefix(cap, "CAP_") {
 			config.Linux.Capabilities[i] = "CAP_" + cap
 		}
+	}
+
+	// if we have a container that needs a terminal but no env vars, then set
+	// default env vars for the terminal to function
+	if config.Spec.Process.Terminal && len(config.Spec.Process.Env) <= 0 {
+		config.Spec.Process.Env = DefaultTerminalEnv
 	}
 
 	return config, nil
