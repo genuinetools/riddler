@@ -210,13 +210,13 @@ func RuntimeConfig(c types.ContainerJSON) (*specs.LinuxRuntimeSpec, error) {
 		}
 	}
 
-	// parse devices
-	if err := parseDevices(config, c.HostConfig); err != nil {
+	// parse additional groups and add them to gid mappings
+	if err := parseMappings(config, c.HostConfig); err != nil {
 		return nil, err
 	}
 
-	// parse additional groups and add them to gid mappings
-	if err := parseMappings(config, c.HostConfig); err != nil {
+	// parse devices
+	if err := parseDevices(config, c.HostConfig); err != nil {
 		return nil, err
 	}
 
@@ -225,9 +225,12 @@ func RuntimeConfig(c types.ContainerJSON) (*specs.LinuxRuntimeSpec, error) {
 		return nil, err
 	}
 
-	// set default apparmor profile if possible
-	if config.Linux.ApparmorProfile == "" && !c.HostConfig.Privileged {
-		config.Linux.ApparmorProfile = DefaultApparmorProfile
+	// set privileged
+	if c.HostConfig.Privileged {
+		if !c.HostConfig.ReadonlyRootfs {
+			// clear readonly for cgroup
+			config.Mounts["cgroup"] = DefaultMountpoints["cgroup"]
+		}
 	}
 
 	return config, nil

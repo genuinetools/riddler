@@ -7,12 +7,34 @@ import (
 
 	containertypes "github.com/docker/engine-api/types/container"
 	"github.com/opencontainers/runc/libcontainer/configs"
+	"github.com/opencontainers/runc/libcontainer/devices"
 	"github.com/opencontainers/runc/libcontainer/label"
 	"github.com/opencontainers/runc/libcontainer/user"
 	"github.com/opencontainers/specs"
 )
 
 func parseDevices(config *specs.LinuxRuntimeSpec, hc *containertypes.HostConfig) error {
+	if hc.Privileged {
+		hostDevices, err := devices.HostDevices()
+		if err != nil {
+			return fmt.Errorf("getting host devices for privileged mode failed: %v", err)
+		}
+		for _, d := range hostDevices {
+			config.Linux.Devices = append(config.Linux.Devices, specs.Device{
+				Type:        d.Type,
+				Path:        d.Path,
+				Major:       d.Major,
+				Minor:       d.Minor,
+				Permissions: d.Permissions,
+				FileMode:    d.FileMode,
+				UID:         d.Uid,
+				GID:         d.Gid,
+			})
+		}
+
+		return nil
+	}
+
 	var userSpecifiedDevices []specs.Device
 	for _, deviceMapping := range hc.Devices {
 		devs, err := getDevicesFromPath(deviceMapping)
@@ -95,8 +117,16 @@ func parseSecurityOpt(config *specs.LinuxRuntimeSpec, hc *containertypes.HostCon
 		}
 	}
 
+	// set default apparmor profile if possible
+	if config.Linux.ApparmorProfile == "" && !hc.Privileged {
+		config.Linux.ApparmorProfile = DefaultApparmorProfile
+	}
+	if config.Linux.ApparmorProfile == "" && hc.Privileged {
+		config.Linux.ApparmorProfile = "unconfined"
+	}
+
 	// set default seccomp profile if the user did not pass a custom profile
-	if !customSeccompProfile {
+	if !customSeccompProfile && !hc.Privileged {
 		config.Linux.Seccomp = defaultSeccompProfile
 	}
 

@@ -151,16 +151,23 @@ func Config(c types.ContainerJSON, info types.Info, capabilities []string) (conf
 		}
 	}
 
+	// set privileged
+	if c.HostConfig.Privileged {
+		// allow all caps
+		capabilities = execdriver.GetAllCapabilities()
+	}
+
 	// get the capabilities
 	config.Linux.Capabilities, err = execdriver.TweakCapabilities(capabilities, c.HostConfig.CapAdd.Slice(), c.HostConfig.CapDrop.Slice())
 	if err != nil {
 		return nil, fmt.Errorf("setting capabilities failed: %v", err)
 	}
+
 	// add CAP_ prefix
 	// TODO: this is awful
 	for i, cap := range config.Linux.Capabilities {
 		if !strings.HasPrefix(cap, "CAP_") {
-			config.Linux.Capabilities[i] = "CAP_" + cap
+			config.Linux.Capabilities[i] = fmt.Sprintf("CAP_%s", cap)
 		}
 	}
 
