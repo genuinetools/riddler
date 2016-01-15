@@ -5,49 +5,66 @@ import (
 	"github.com/opencontainers/specs"
 )
 
+const (
+	// DefaultUserNSHostID is the default start mapped host id for userns.
+	DefaultUserNSHostID = 886432
+	// DefaultUserNSMapSize is the default size for the uid and gid mappings for userns.
+	DefaultUserNSMapSize = 46578392
+)
+
+var (
+	// DefaultMountpoints are the default mounts for the runtime.
+	DefaultMountpoints = map[string]specs.Mount{
+		"/proc": {
+			Type:    "proc",
+			Source:  "proc",
+			Options: nil,
+		},
+		"/dev": {
+			Type:    "tmpfs",
+			Source:  "tmpfs",
+			Options: []string{"nosuid", "strictatime", "mode=755", "size=65536k"},
+		},
+		"/dev/pts": {
+			Type:    "devpts",
+			Source:  "devpts",
+			Options: []string{"nosuid", "noexec", "newinstance", "ptmxmode=0666", "mode=0620"},
+		},
+		"/dev/shm": {
+			Type:    "tmpfs",
+			Source:  "shm",
+			Options: []string{"nosuid", "noexec", "nodev", "mode=1777", "size=65536k"},
+		},
+		"/dev/mqueue": {
+			Type:    "mqueue",
+			Source:  "mqueue",
+			Options: []string{"nosuid", "noexec", "nodev"},
+		},
+		"/sys": {
+			Type:    "sysfs",
+			Source:  "sysfs",
+			Options: []string{"nosuid", "noexec", "nodev"},
+		},
+		"/sys/fs/cgroup": {
+			Type:    "cgroup",
+			Source:  "cgroup",
+			Options: []string{"nosuid", "noexec", "nodev", "relatime"},
+		},
+	}
+)
+
 // RuntimeConfig takes ContainerJSON and converts it into the opencontainers runtime spec.
 func RuntimeConfig(c types.ContainerJSON) (*specs.LinuxRuntimeSpec, error) {
 	config := &specs.LinuxRuntimeSpec{
 		RuntimeSpec: specs.RuntimeSpec{
-			Mounts: map[string]specs.Mount{
-				"proc": {
-					Type:    "proc",
-					Source:  "proc",
-					Options: nil,
-				},
-				"dev": {
-					Type:    "tmpfs",
-					Source:  "tmpfs",
-					Options: []string{"nosuid", "strictatime", "mode=755", "size=65536k"},
-				},
-				"devpts": {
-					Type:    "devpts",
-					Source:  "devpts",
-					Options: []string{"nosuid", "noexec", "newinstance", "ptmxmode=0666", "mode=0620", "gid=5"},
-				},
-				"shm": {
-					Type:    "tmpfs",
-					Source:  "shm",
-					Options: []string{"nosuid", "noexec", "nodev", "mode=1777", "size=65536k"},
-				},
-				"mqueue": {
-					Type:    "mqueue",
-					Source:  "mqueue",
-					Options: []string{"nosuid", "noexec", "nodev"},
-				},
-				"sysfs": {
-					Type:    "sysfs",
-					Source:  "sysfs",
-					Options: []string{"nosuid", "noexec", "nodev"},
-				},
-				"cgroup": {
-					Type:    "cgroup",
-					Source:  "cgroup",
-					Options: []string{"nosuid", "noexec", "nodev", "relatime", "ro"},
-				},
-			},
+			Mounts: map[string]specs.Mount{},
 			Hooks: specs.Hooks{
-			// TODO: do hooks
+				// TODO: able to pass default hooks for configs at run
+				Prestart: []specs.Hook{
+					{
+						Path: "/home/jessie/.go/bin/netns",
+					},
+				},
 			},
 		},
 		Linux: specs.LinuxRuntime{
@@ -73,16 +90,16 @@ func RuntimeConfig(c types.ContainerJSON) (*specs.LinuxRuntimeSpec, error) {
 			},
 			UIDMappings: []specs.IDMapping{
 				{
-					HostID:      886432,
 					ContainerID: 0,
-					Size:        65535,
+					HostID:      DefaultUserNSHostID,
+					Size:        DefaultUserNSMapSize,
 				},
 			},
 			GIDMappings: []specs.IDMapping{
 				{
-					HostID:      886432,
 					ContainerID: 0,
-					Size:        65535,
+					HostID:      DefaultUserNSHostID,
+					Size:        DefaultUserNSMapSize,
 				},
 			},
 			// TODO: add parsing of Ulimits
@@ -133,6 +150,7 @@ func RuntimeConfig(c types.ContainerJSON) (*specs.LinuxRuntimeSpec, error) {
 			opt = append(opt, mount.Mode)
 		}
 		opt = append(opt, "rbind")
+
 		config.Mounts[mount.Destination] = specs.Mount{
 			Type:    "bind",
 			Source:  mount.Source,
@@ -140,12 +158,39 @@ func RuntimeConfig(c types.ContainerJSON) (*specs.LinuxRuntimeSpec, error) {
 		}
 	}
 
+	// if we aren't doing something crazy like mounting a default mount ourselves,
+	// the we can mount it the default way
+	for name, mount := range DefaultMountpoints {
+		if _, ok := config.Mounts[name]; !ok {
+			config.Mounts[name] = mount
+		}
+	}
+
+	// fix default mounts for cgroups and devpts without user namespaces
+	// see: https://github.com/opencontainers/runc/issues/225#issuecomment-136519577
+	if len(config.Linux.UIDMappings) == 0 {
+		if _, ok := config.Mounts["/sys/fs/cgroups"]; ok {
+			config.Mounts["/sys/fs/cgroup"] = specs.Mount{
+				Type:    "cgroup",
+				Source:  "cgroup",
+				Options: append(config.Mounts["cgroup"].Options, "ro"),
+			}
+		}
+		if _, ok := config.Mounts["/dev/pts"]; ok {
+			config.Mounts["/dev/pts"] = specs.Mount{
+				Type:    "devpts",
+				Source:  "devpts",
+				Options: append(config.Mounts["devpts"].Options, "gid=5"),
+			}
+		}
+	}
+
 	// add /etc/hosts and /etc/resolv.conf if we should have networking
 	if c.HostConfig.NetworkMode != "none" && c.HostConfig.NetworkMode != "host" {
 		for _, nm := range NetworkMounts {
-			config.Mounts[nm] = specs.Mount{
+			config.Mounts[nm.Path] = specs.Mount{
 				Type:    "bind",
-				Source:  nm,
+				Source:  nm.Path,
 				Options: []string{"rbind", "ro"},
 			}
 		}
@@ -153,6 +198,11 @@ func RuntimeConfig(c types.ContainerJSON) (*specs.LinuxRuntimeSpec, error) {
 
 	// parse devices
 	if err := parseDevices(config, c.HostConfig); err != nil {
+		return nil, err
+	}
+
+	// parse additional groups and add them to gid mappings
+	if err := parseMappings(config, c.HostConfig); err != nil {
 		return nil, err
 	}
 
@@ -165,9 +215,6 @@ func RuntimeConfig(c types.ContainerJSON) (*specs.LinuxRuntimeSpec, error) {
 	if config.Linux.ApparmorProfile == "" && !c.HostConfig.Privileged {
 		config.Linux.ApparmorProfile = DefaultApparmorProfile
 	}
-
-	// TODO: set default seccomp profile if possible
-	config.Linux.Seccomp = defaultSeccompProfile
 
 	return config, nil
 }

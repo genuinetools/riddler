@@ -31,39 +31,39 @@ func TestConfig(t *testing.T) {
 				Path:     "rootfs",
 				Readonly: false,
 			},
-			Hostname: "13b2fcc2316e",
+			Hostname: "torproxy",
 			Mounts: []specs.MountPoint{
-				{
-					Name: "proc",
-					Path: "/proc",
-				},
-				{
-					Name: "dev",
-					Path: "/dev",
-				},
-				{
-					Name: "devpts",
-					Path: "/dev/pts",
-				},
-				{
-					Name: "shm",
-					Path: "/dev/shm",
-				},
-				{
-					Name: "mqueue",
-					Path: "/dev/mqueue",
-				},
-				{
-					Name: "sysfs",
-					Path: "/sys",
-				},
-				{
-					Name: "cgroup",
-					Path: "/sys/fs/cgroup",
-				},
 				{
 					Name: "/etc/localtime",
 					Path: "/etc/localtime",
+				},
+				{
+					Name: "/proc",
+					Path: "/proc",
+				},
+				{
+					Name: "/dev",
+					Path: "/dev",
+				},
+				{
+					Name: "/dev/pts",
+					Path: "/dev/pts",
+				},
+				{
+					Name: "/dev/shm",
+					Path: "/dev/shm",
+				},
+				{
+					Name: "/dev/mqueue",
+					Path: "/dev/mqueue",
+				},
+				{
+					Name: "/sys",
+					Path: "/sys",
+				},
+				{
+					Name: "/sys/fs/cgroup",
+					Path: "/sys/fs/cgroup",
 				},
 				{
 					Name: "/etc/hosts",

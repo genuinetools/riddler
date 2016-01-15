@@ -8,6 +8,7 @@ import (
 	containertypes "github.com/docker/engine-api/types/container"
 	"github.com/opencontainers/runc/libcontainer/configs"
 	"github.com/opencontainers/runc/libcontainer/label"
+	"github.com/opencontainers/runc/libcontainer/user"
 	"github.com/opencontainers/specs"
 )
 
@@ -27,12 +28,51 @@ func parseDevices(config *specs.LinuxRuntimeSpec, hc *containertypes.HostConfig)
 	return nil
 }
 
+func parseMappings(config *specs.LinuxRuntimeSpec, hc *containertypes.HostConfig) error {
+	for _, g := range hc.GroupAdd {
+		var newGidMap = []specs.IDMapping{}
+		group, err := user.LookupGroup(g)
+		if err != nil {
+			return fmt.Errorf("looking up group %s failed: %v", g, err)
+		}
+		gid := uint32(group.Gid)
+
+		for _, gm := range config.Linux.GIDMappings {
+			if (gm.ContainerID+gm.Size) >= gid && gm.ContainerID <= gid {
+				size := gm.Size
+				// split the config.Linux.GIDMappingsping up so we can map to the additional group
+				gm.Size = gid - gm.ContainerID - 1
+
+				// add the gid maps for the additional groups
+				newGidMap = append(newGidMap, specs.IDMapping{
+					ContainerID: gid,
+					HostID:      gid,
+					Size:        1,
+				})
+
+				// add the other side of the split
+				newGidMap = append(newGidMap, specs.IDMapping{
+					ContainerID: gid + 1,
+					HostID:      gm.HostID + gid - 1,
+					Size:        size - gid - 1,
+				})
+			}
+			// add back original gm
+			newGidMap = append(newGidMap, gm)
+		}
+		config.Linux.GIDMappings = newGidMap
+	}
+
+	return nil
+}
+
 func parseSecurityOpt(config *specs.LinuxRuntimeSpec, hc *containertypes.HostConfig) error {
 	var (
 		labelOpts []string
 		err       error
 	)
 
+	var customSeccompProfile bool
 	for _, opt := range hc.SecurityOpt {
 		con := strings.SplitN(opt, ":", 2)
 		if len(con) == 1 {
@@ -44,6 +84,7 @@ func parseSecurityOpt(config *specs.LinuxRuntimeSpec, hc *containertypes.HostCon
 		case "apparmor":
 			config.Linux.ApparmorProfile = con[1]
 		case "seccomp":
+			customSeccompProfile = true
 			var seccomp specs.Seccomp
 			if err := json.Unmarshal([]byte(con[1]), &seccomp); err != nil {
 				return fmt.Errorf("parsing seccomp profile failed: %v", err)
@@ -52,6 +93,11 @@ func parseSecurityOpt(config *specs.LinuxRuntimeSpec, hc *containertypes.HostCon
 		default:
 			return fmt.Errorf("invalid security-opt: %q", opt)
 		}
+	}
+
+	// set default seccomp profile if the user did not pass a custom profile
+	if !customSeccompProfile {
+		config.Linux.Seccomp = defaultSeccompProfile
 	}
 
 	config.Linux.SelinuxProcessLabel, _, err = label.InitLabels(labelOpts)

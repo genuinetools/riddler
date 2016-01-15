@@ -20,8 +20,49 @@ const (
 )
 
 var (
+	// DefaultMounts are the default mounts for a container.
+	DefaultMounts = []specs.MountPoint{
+		{
+			Name: "/proc",
+			Path: "/proc",
+		},
+		{
+			Name: "/dev",
+			Path: "/dev",
+		},
+		{
+			Name: "/dev/pts",
+			Path: "/dev/pts",
+		},
+		{
+			Name: "/dev/shm",
+			Path: "/dev/shm",
+		},
+		{
+			Name: "/dev/mqueue",
+			Path: "/dev/mqueue",
+		},
+		{
+			Name: "/sys",
+			Path: "/sys",
+		},
+		{
+			Name: "/sys/fs/cgroup",
+			Path: "/sys/fs/cgroup",
+		},
+	}
+
 	// NetworkMounts are the mounts needed for default networking.
-	NetworkMounts = []string{"/etc/hosts", "/etc/resolv.conf"}
+	NetworkMounts = []specs.MountPoint{
+		{
+			Name: "/etc/hosts",
+			Path: "/etc/hosts",
+		},
+		{
+			Name: "/etc/resolv.conf",
+			Path: "/etc/resolv.conf",
+		},
+	}
 )
 
 // Config takes ContainerJSON and Daemon Info and converts it into the opencontainers spec.
@@ -46,37 +87,7 @@ func Config(c types.ContainerJSON, info types.Info, capabilities []string) (conf
 				Path:     "rootfs",
 				Readonly: c.HostConfig.ReadonlyRootfs,
 			},
-			Hostname: c.Config.Hostname,
-			Mounts: []specs.MountPoint{
-				{
-					Name: "proc",
-					Path: "/proc",
-				},
-				{
-					Name: "dev",
-					Path: "/dev",
-				},
-				{
-					Name: "devpts",
-					Path: "/dev/pts",
-				},
-				{
-					Name: "shm",
-					Path: "/dev/shm",
-				},
-				{
-					Name: "mqueue",
-					Path: "/dev/mqueue",
-				},
-				{
-					Name: "sysfs",
-					Path: "/sys",
-				},
-				{
-					Name: "cgroup",
-					Path: "/sys/fs/cgroup",
-				},
-			},
+			Mounts: []specs.MountPoint{},
 		},
 	}
 
@@ -102,8 +113,16 @@ func Config(c types.ContainerJSON, info types.Info, capabilities []string) (conf
 		config.Spec.Process.User.AdditionalGids = append(config.Spec.Process.User.AdditionalGids, uint32(g.Gid))
 	}
 
+	// get the hostname, if the hostname is the name as the first 12 characters of the id,
+	// then set the hostname as the container name
+	if c.ID[:12] == c.Config.Hostname {
+		config.Hostname = strings.TrimPrefix(c.Name, "/")
+	}
+
 	// get mounts
+	mounts := map[string]bool{}
 	for _, mount := range c.Mounts {
+		mounts[mount.Destination] = true
 		config.Mounts = append(config.Mounts, specs.MountPoint{
 			Name: mount.Destination,
 			Path: mount.Destination,
@@ -112,11 +131,14 @@ func Config(c types.ContainerJSON, info types.Info, capabilities []string) (conf
 
 	// add /etc/hosts and /etc/resolv.conf if we should have networking
 	if c.HostConfig.NetworkMode != "none" && c.HostConfig.NetworkMode != "host" {
-		for _, nm := range NetworkMounts {
-			config.Mounts = append(config.Mounts, specs.MountPoint{
-				Name: nm,
-				Path: nm,
-			})
+		DefaultMounts = append(DefaultMounts, NetworkMounts...)
+	}
+
+	// if we aren't doing something crazy like mounting a default mount ourselves,
+	// the we can mount it the default way
+	for _, mount := range DefaultMounts {
+		if _, ok := mounts[mount.Path]; !ok {
+			config.Mounts = append(config.Mounts, mount)
 		}
 	}
 
