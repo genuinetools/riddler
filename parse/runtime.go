@@ -1,6 +1,8 @@
 package parse
 
 import (
+	"path"
+
 	"github.com/docker/engine-api/types"
 	"github.com/opencontainers/specs"
 )
@@ -15,37 +17,37 @@ const (
 var (
 	// DefaultMountpoints are the default mounts for the runtime.
 	DefaultMountpoints = map[string]specs.Mount{
-		"/proc": {
+		"proc": {
 			Type:    "proc",
 			Source:  "proc",
 			Options: nil,
 		},
-		"/dev": {
+		"dev": {
 			Type:    "tmpfs",
 			Source:  "tmpfs",
 			Options: []string{"nosuid", "strictatime", "mode=755", "size=65536k"},
 		},
-		"/dev/pts": {
+		"devpts": {
 			Type:    "devpts",
 			Source:  "devpts",
 			Options: []string{"nosuid", "noexec", "newinstance", "ptmxmode=0666", "mode=0620"},
 		},
-		"/dev/shm": {
+		"shm": {
 			Type:    "tmpfs",
 			Source:  "shm",
 			Options: []string{"nosuid", "noexec", "nodev", "mode=1777", "size=65536k"},
 		},
-		"/dev/mqueue": {
+		"mqueue": {
 			Type:    "mqueue",
 			Source:  "mqueue",
 			Options: []string{"nosuid", "noexec", "nodev"},
 		},
-		"/sys": {
+		"sysfs": {
 			Type:    "sysfs",
 			Source:  "sysfs",
 			Options: []string{"nosuid", "noexec", "nodev"},
 		},
-		"/sys/fs/cgroup": {
+		"cgroup": {
 			Type:    "cgroup",
 			Source:  "cgroup",
 			Options: []string{"nosuid", "noexec", "nodev", "relatime"},
@@ -161,7 +163,7 @@ func RuntimeConfig(c types.ContainerJSON) (*specs.LinuxRuntimeSpec, error) {
 	// if we aren't doing something crazy like mounting a default mount ourselves,
 	// the we can mount it the default way
 	for name, mount := range DefaultMountpoints {
-		if _, ok := config.Mounts[name]; !ok {
+		if _, ok := config.Mounts[path.Join("/", "dev", name)]; !ok {
 			config.Mounts[name] = mount
 		}
 	}
@@ -169,15 +171,15 @@ func RuntimeConfig(c types.ContainerJSON) (*specs.LinuxRuntimeSpec, error) {
 	// fix default mounts for cgroups and devpts without user namespaces
 	// see: https://github.com/opencontainers/runc/issues/225#issuecomment-136519577
 	if len(config.Linux.UIDMappings) == 0 {
-		if _, ok := config.Mounts["/sys/fs/cgroups"]; ok {
-			config.Mounts["/sys/fs/cgroup"] = specs.Mount{
+		if _, ok := config.Mounts["cgroup"]; ok {
+			config.Mounts["cgroup"] = specs.Mount{
 				Type:    "cgroup",
 				Source:  "cgroup",
 				Options: append(config.Mounts["cgroup"].Options, "ro"),
 			}
 		}
-		if _, ok := config.Mounts["/dev/pts"]; ok {
-			config.Mounts["/dev/pts"] = specs.Mount{
+		if _, ok := config.Mounts["devpts"]; ok {
+			config.Mounts["devpts"] = specs.Mount{
 				Type:    "devpts",
 				Source:  "devpts",
 				Options: append(config.Mounts["devpts"].Options, "gid=5"),

@@ -23,31 +23,31 @@ var (
 	// DefaultMounts are the default mounts for a container.
 	DefaultMounts = []specs.MountPoint{
 		{
-			Name: "/proc",
+			Name: "proc",
 			Path: "/proc",
 		},
 		{
-			Name: "/dev",
+			Name: "dev",
 			Path: "/dev",
 		},
 		{
-			Name: "/dev/pts",
+			Name: "devpts",
 			Path: "/dev/pts",
 		},
 		{
-			Name: "/dev/shm",
+			Name: "shm",
 			Path: "/dev/shm",
 		},
 		{
-			Name: "/dev/mqueue",
+			Name: "mqueue",
 			Path: "/dev/mqueue",
 		},
 		{
-			Name: "/sys",
+			Name: "sysfs",
 			Path: "/sys",
 		},
 		{
-			Name: "/sys/fs/cgroup",
+			Name: "cgroup",
 			Path: "/sys/fs/cgroup",
 		},
 	}
