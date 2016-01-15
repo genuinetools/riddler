@@ -36,6 +36,7 @@ var (
 	arg        string
 	bundle     string
 	dockerHost string
+	force      bool
 
 	debug   bool
 	version bool
@@ -45,6 +46,9 @@ func init() {
 	// parse flags
 	flag.StringVar(&dockerHost, "host", "unix:///var/run/docker.sock", "Docker Daemon socket(s) to connect to")
 	flag.StringVar(&bundle, "bundle", "", "Path to the root of the bundle directory")
+
+	flag.BoolVar(&force, "force", false, "force overwrite existing files")
+	flag.BoolVar(&force, "f", false, "force overwrite existing files")
 
 	flag.BoolVar(&version, "version", false, "print version and exit")
 	flag.BoolVar(&version, "v", false, "print version and exit (shorthand)")
@@ -146,11 +150,13 @@ func writeConfigs(spec *specs.LinuxSpec, rspec *specs.LinuxRuntimeSpec) error {
 	}
 
 	// make sure we don't already have files, we would not want to overwrite them
-	if err := checkNoFile(specConfig); err != nil {
-		return err
-	}
-	if err := checkNoFile(runtimeConfig); err != nil {
-		return err
+	if !force {
+		if err := checkNoFile(specConfig); err != nil {
+			return err
+		}
+		if err := checkNoFile(runtimeConfig); err != nil {
+			return err
+		}
 	}
 
 	data, err := json.MarshalIndent(&spec, "", "    ")
