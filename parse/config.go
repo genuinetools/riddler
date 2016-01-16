@@ -18,6 +18,10 @@ const (
 	// DefaultApparmorProfile is docker engine's default apparmor profile for containers.
 	DefaultApparmorProfile = "docker-default"
 
+	// DefaultCurrentWorkingDirectory defines the default directory the container
+	// will enter in, if not already specified by the user.
+	DefaultCurrentWorkingDirectory = "/"
+
 	// DefaultTerminal is the default TERM for containers.
 	DefaultTerminal = "xterm"
 )
@@ -98,6 +102,11 @@ func Config(c types.ContainerJSON, info types.Info, capabilities []string) (conf
 			},
 			Mounts: []specs.MountPoint{},
 		},
+	}
+
+	// make sure the current working directory is not blank
+	if config.Process.Cwd == "" {
+		config.Process.Cwd = DefaultCurrentWorkingDirectory
 	}
 
 	// get the user

@@ -25,7 +25,7 @@ func TestConfig(t *testing.T) {
 				},
 				Args: []string{"tor", "-f", "/etc/tor/torrc.default"},
 				Env:  []string{"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"},
-				Cwd:  "",
+				Cwd:  "/",
 			},
 			Root: specs.Root{
 				Path:     "rootfs",
