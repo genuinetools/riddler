@@ -17,9 +17,14 @@ $ riddler --help
  docker inspect to opencontainers runc spec generator.
  Version: v0.1.0
 
-  -bundle string
+ -bundle string
         Path to the root of the bundle directory
   -d    run in debug mode
+  -f    force overwrite existing files
+  -force
+        force overwrite existing files
+  -hook value
+        Hooks to prefill into spec file. (ex. --hook prestart:netns) (default [])
   -host string
         Docker Daemon socket(s) to connect to (default "unix:///var/run/docker.sock")
   -v    print version and exit (shorthand)

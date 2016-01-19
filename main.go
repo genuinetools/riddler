@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
 	native "github.com/docker/docker/daemon/execdriver/native/template"
@@ -36,16 +38,61 @@ var (
 	arg        string
 	bundle     string
 	dockerHost string
+	hooks      specs.Hooks
+	hookflags  stringSlice
 	force      bool
 
 	debug   bool
 	version bool
 )
 
+// stringSlice is a slice of strings
+type stringSlice []string
+
+// implement the flag interface for stringSlice
+func (s *stringSlice) String() string {
+	return fmt.Sprintf("%s", *s)
+}
+func (s *stringSlice) Set(value string) error {
+	*s = append(*s, value)
+	return nil
+}
+func (s stringSlice) ParseHooks() (hooks specs.Hooks, err error) {
+	for _, v := range s {
+		parts := strings.SplitN(v, ":", 2)
+		if len(parts) <= 1 {
+			return hooks, fmt.Errorf("parsing %s as hook_name:exec failed", v)
+		}
+		cmd := strings.Split(parts[1], " ")
+		exec, err := exec.LookPath(cmd[0])
+		if err != nil {
+			return hooks, fmt.Errorf("looking up exec path for %s failed: %v", cmd[0], err)
+		}
+		hook := specs.Hook{
+			Path: exec,
+		}
+		if len(cmd) > 1 {
+			hook.Args = cmd[:1]
+		}
+		switch parts[0] {
+		case "prestart":
+			hooks.Prestart = append(hooks.Prestart, hook)
+		case "poststart":
+			hooks.Poststart = append(hooks.Poststart, hook)
+		case "poststop":
+			hooks.Poststop = append(hooks.Poststop, hook)
+		default:
+			return hooks, fmt.Errorf("%s is not a valid hook, try 'prestart', 'poststart', or 'poststop'", parts[0])
+		}
+	}
+	return hooks, nil
+}
+
 func init() {
 	// parse flags
 	flag.StringVar(&dockerHost, "host", "unix:///var/run/docker.sock", "Docker Daemon socket(s) to connect to")
 	flag.StringVar(&bundle, "bundle", "", "Path to the root of the bundle directory")
+	flag.Var(&hookflags, "hook", "Hooks to prefill into spec file. (ex. --hook prestart:netns)")
 
 	flag.BoolVar(&force, "force", false, "force overwrite existing files")
 	flag.BoolVar(&force, "f", false, "force overwrite existing files")
@@ -81,6 +128,12 @@ func init() {
 	if debug {
 		logrus.SetLevel(logrus.DebugLevel)
 	}
+
+	var err error
+	hooks, err = hookflags.ParseHooks()
+	if err != nil {
+		logrus.Fatal(err)
+	}
 }
 
 func main() {
@@ -113,6 +166,8 @@ func main() {
 		logrus.Fatalf("Spec runtime config conversion for %s failed: %v", arg, err)
 	}
 
+	// fill in hooks, if passed through command line
+	rspec.Hooks = hooks
 	if err := writeConfigs(spec, rspec); err != nil {
 		logrus.Fatal(err)
 	}
