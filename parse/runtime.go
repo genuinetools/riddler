@@ -60,14 +60,7 @@ func RuntimeConfig(c types.ContainerJSON) (*specs.LinuxRuntimeSpec, error) {
 	config := &specs.LinuxRuntimeSpec{
 		RuntimeSpec: specs.RuntimeSpec{
 			Mounts: map[string]specs.Mount{},
-			Hooks:  specs.Hooks{
-			// TODO: able to pass default hooks for configs at run
-			/*	Prestart: []specs.Hook{
-				{
-					Path: "/home/jessie/.go/bin/netns",
-				},
-			},*/
-			},
+			Hooks:  specs.Hooks{},
 		},
 		Linux: specs.LinuxRuntime{
 			Namespaces: []specs.Namespace{
