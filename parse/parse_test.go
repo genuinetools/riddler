@@ -97,8 +97,8 @@ func TestParseMappings(t *testing.T) {
 
 	for _, test := range tests {
 		// make config
-		config := &specs.LinuxRuntimeSpec{
-			Linux: specs.LinuxRuntime{
+		config := &specs.LinuxSpec{
+			Linux: specs.Linux{
 				GIDMappings: test.gidMap,
 			},
 		}

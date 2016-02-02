@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Sirupsen/logrus"
 	containertypes "github.com/docker/engine-api/types/container"
 	"github.com/opencontainers/runc/libcontainer/configs"
 	"github.com/opencontainers/runc/libcontainer/devices"
@@ -13,22 +14,22 @@ import (
 	"github.com/opencontainers/specs"
 )
 
-func parseDevices(config *specs.LinuxRuntimeSpec, hc *containertypes.HostConfig) error {
+func parseDevices(config *specs.LinuxSpec, hc *containertypes.HostConfig) error {
 	if hc.Privileged {
 		hostDevices, err := devices.HostDevices()
 		if err != nil {
 			return fmt.Errorf("getting host devices for privileged mode failed: %v", err)
 		}
 		for _, d := range hostDevices {
+			logrus.Infof("devPath: %d, path: %s, Permissions: %#v", d.Type, d.Path, d.Permissions)
 			config.Linux.Devices = append(config.Linux.Devices, specs.Device{
-				Type:        d.Type,
-				Path:        d.Path,
-				Major:       d.Major,
-				Minor:       d.Minor,
-				Permissions: d.Permissions,
-				FileMode:    d.FileMode,
-				UID:         d.Uid,
-				GID:         d.Gid,
+				Type:     d.Type,
+				Path:     d.Path,
+				Major:    d.Major,
+				Minor:    d.Minor,
+				FileMode: &d.FileMode,
+				UID:      &d.Uid,
+				GID:      &d.Gid,
 			})
 		}
 
@@ -50,7 +51,7 @@ func parseDevices(config *specs.LinuxRuntimeSpec, hc *containertypes.HostConfig)
 	return nil
 }
 
-func parseMappings(config *specs.LinuxRuntimeSpec, hc *containertypes.HostConfig) error {
+func parseMappings(config *specs.LinuxSpec, hc *containertypes.HostConfig) error {
 	for _, g := range hc.GroupAdd {
 		var newGidMap = []specs.IDMapping{}
 		group, err := user.LookupGroup(g)
@@ -88,7 +89,7 @@ func parseMappings(config *specs.LinuxRuntimeSpec, hc *containertypes.HostConfig
 	return nil
 }
 
-func parseSecurityOpt(config *specs.LinuxRuntimeSpec, hc *containertypes.HostConfig) error {
+func parseSecurityOpt(config *specs.LinuxSpec, hc *containertypes.HostConfig) error {
 	var (
 		labelOpts []string
 		err       error
@@ -107,11 +108,13 @@ func parseSecurityOpt(config *specs.LinuxRuntimeSpec, hc *containertypes.HostCon
 			config.Linux.ApparmorProfile = con[1]
 		case "seccomp":
 			customSeccompProfile = true
-			var seccomp specs.Seccomp
-			if err := json.Unmarshal([]byte(con[1]), &seccomp); err != nil {
-				return fmt.Errorf("parsing seccomp profile failed: %v", err)
+			if con[1] != "unconfined" {
+				var seccomp specs.Seccomp
+				if err := json.Unmarshal([]byte(con[1]), &seccomp); err != nil {
+					return fmt.Errorf("parsing seccomp profile failed: %v", err)
+				}
+				config.Linux.Seccomp = seccomp
 			}
-			config.Linux.Seccomp = seccomp
 		default:
 			return fmt.Errorf("invalid security-opt: %q", opt)
 		}

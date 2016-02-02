@@ -30,8 +30,7 @@ const (
 	// VERSION is the binary version.
 	VERSION = "v0.1.0"
 
-	specConfig    = "config.json"
-	runtimeConfig = "runtime.json"
+	specConfig = "config.json"
 )
 
 var (
@@ -161,18 +160,13 @@ func main() {
 		logrus.Fatalf("Spec config conversion for %s failed: %v", arg, err)
 	}
 
-	rspec, err := parse.RuntimeConfig(c)
-	if err != nil {
-		logrus.Fatalf("Spec runtime config conversion for %s failed: %v", arg, err)
-	}
-
 	// fill in hooks, if passed through command line
-	rspec.Hooks = hooks
-	if err := writeConfigs(spec, rspec); err != nil {
+	spec.Hooks = hooks
+	if err := writeConfig(spec); err != nil {
 		logrus.Fatal(err)
 	}
 
-	fmt.Printf("%s and %s have been saved.", specConfig, runtimeConfig)
+	fmt.Printf("%s has been saved.", specConfig)
 }
 
 func usageAndExit(message string, exitCode int) {
@@ -196,7 +190,7 @@ func checkNoFile(name string) error {
 	return nil
 }
 
-func writeConfigs(spec *specs.LinuxSpec, rspec *specs.LinuxRuntimeSpec) error {
+func writeConfig(spec *specs.LinuxSpec) error {
 	if bundle != "" {
 		// change current working directory
 		if err := os.Chdir(bundle); err != nil {
@@ -209,9 +203,6 @@ func writeConfigs(spec *specs.LinuxSpec, rspec *specs.LinuxRuntimeSpec) error {
 		if err := checkNoFile(specConfig); err != nil {
 			return err
 		}
-		if err := checkNoFile(runtimeConfig); err != nil {
-			return err
-		}
 	}
 
 	data, err := json.MarshalIndent(&spec, "", "    ")
@@ -219,14 +210,6 @@ func writeConfigs(spec *specs.LinuxSpec, rspec *specs.LinuxRuntimeSpec) error {
 		return err
 	}
 	if err := ioutil.WriteFile(specConfig, data, 0666); err != nil {
-		return err
-	}
-
-	rdata, err := json.MarshalIndent(&rspec, "", "    ")
-	if err != nil {
-		return err
-	}
-	if err := ioutil.WriteFile(runtimeConfig, rdata, 0666); err != nil {
 		return err
 	}
 

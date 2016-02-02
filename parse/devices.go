@@ -7,6 +7,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/Sirupsen/logrus"
 	containertypes "github.com/docker/engine-api/types/container"
 	"github.com/opencontainers/runc/libcontainer/configs"
 	"github.com/opencontainers/runc/libcontainer/devices"
@@ -22,15 +23,15 @@ func mergeDevices(defaultDevices []*configs.Device, userDevices []specs.Device) 
 	var devs []specs.Device
 	for _, d := range defaultDevices {
 		if _, defined := paths[d.Path]; !defined {
+			logrus.Infof("devPath: %d, path: %s, Permissions: %#v", d.Type, d.Path, d.Permissions)
 			devs = append(devs, specs.Device{
-				Type:        d.Type,
-				Path:        d.Path,
-				Major:       d.Major,
-				Minor:       d.Minor,
-				Permissions: d.Permissions,
-				FileMode:    d.FileMode,
-				UID:         d.Uid,
-				GID:         d.Gid,
+				Type:     d.Type,
+				Path:     d.Path,
+				Major:    d.Major,
+				Minor:    d.Minor,
+				FileMode: &d.FileMode,
+				UID:      &d.Uid,
+				GID:      &d.Gid,
 			})
 		}
 	}
@@ -107,14 +108,14 @@ func deviceFromPath(path, permissions string) (*specs.Device, error) {
 		return nil, fmt.Errorf("cannot determine the device number for device %s", path)
 	}
 	devNumber := int(statt.Rdev)
+	logrus.Infof("devPath: %d, path: %s, Permissions: %#v", devType, path, permissions)
 	return &specs.Device{
-		Type:        devType,
-		Path:        path,
-		Major:       devices.Major(devNumber),
-		Minor:       devices.Minor(devNumber),
-		Permissions: permissions,
-		FileMode:    fileModePermissionBits,
-		UID:         statt.Uid,
-		GID:         statt.Gid,
+		Type:     devType,
+		Path:     path,
+		Major:    devices.Major(devNumber),
+		Minor:    devices.Minor(devNumber),
+		FileMode: &fileModePermissionBits,
+		UID:      &statt.Uid,
+		GID:      &statt.Gid,
 	}, nil
 }
