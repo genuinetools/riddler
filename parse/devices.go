@@ -14,16 +14,14 @@ import (
 	"github.com/opencontainers/specs"
 )
 
-func mergeDevices(defaultDevices []*configs.Device, userDevices []specs.Device) []specs.Device {
+func mergeDevices(defaultDevices []*configs.Device, userDevices []specs.Device) (devs []specs.Device, dc []specs.DeviceCgroup) {
 	paths := map[string]specs.Device{}
 	for _, d := range userDevices {
 		paths[d.Path] = d
 	}
 
-	var devs []specs.Device
 	for _, d := range defaultDevices {
 		if _, defined := paths[d.Path]; !defined {
-			logrus.Infof("devPath: %d, path: %s, Permissions: %#v", d.Type, d.Path, d.Permissions)
 			devs = append(devs, specs.Device{
 				Type:     d.Type,
 				Path:     d.Path,
@@ -33,9 +31,16 @@ func mergeDevices(defaultDevices []*configs.Device, userDevices []specs.Device) 
 				UID:      &d.Uid,
 				GID:      &d.Gid,
 			})
+			dc = append(dc, specs.DeviceCgroup{
+				Allow:  true,
+				Type:   &d.Type,
+				Major:  &d.Major,
+				Minor:  &d.Minor,
+				Access: &d.Permissions,
+			})
 		}
 	}
-	return append(devs, userDevices...)
+	return append(devs, userDevices...), dc
 }
 
 func uint64ptr(i int64) *uint64 {

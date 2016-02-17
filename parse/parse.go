@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
 	containertypes "github.com/docker/engine-api/types/container"
 	"github.com/opencontainers/runc/libcontainer/configs"
 	"github.com/opencontainers/runc/libcontainer/devices"
@@ -21,7 +20,6 @@ func parseDevices(config *specs.LinuxSpec, hc *containertypes.HostConfig) error 
 			return fmt.Errorf("getting host devices for privileged mode failed: %v", err)
 		}
 		for _, d := range hostDevices {
-			logrus.Infof("devPath: %d, path: %s, Permissions: %#v", d.Type, d.Path, d.Permissions)
 			config.Linux.Devices = append(config.Linux.Devices, specs.Device{
 				Type:     d.Type,
 				Path:     d.Path,
@@ -30,6 +28,13 @@ func parseDevices(config *specs.LinuxSpec, hc *containertypes.HostConfig) error 
 				FileMode: &d.FileMode,
 				UID:      &d.Uid,
 				GID:      &d.Gid,
+			})
+			config.Linux.Resources.Devices = append(config.Linux.Resources.Devices, specs.DeviceCgroup{
+				Allow:  true,
+				Type:   &d.Type,
+				Major:  &d.Major,
+				Minor:  &d.Minor,
+				Access: &d.Permissions,
 			})
 		}
 
@@ -46,8 +51,9 @@ func parseDevices(config *specs.LinuxSpec, hc *containertypes.HostConfig) error 
 		userSpecifiedDevices = append(userSpecifiedDevices, devs...)
 	}
 
-	config.Linux.Devices = mergeDevices(configs.DefaultSimpleDevices, userSpecifiedDevices)
-
+	var dc []specs.DeviceCgroup
+	config.Linux.Devices, dc = mergeDevices(configs.DefaultSimpleDevices, userSpecifiedDevices)
+	config.Linux.Resources.Devices = append(config.Linux.Resources.Devices, dc...)
 	return nil
 }
 
@@ -136,3 +142,5 @@ func parseSecurityOpt(config *specs.LinuxSpec, hc *containertypes.HostConfig) er
 	config.Linux.SelinuxProcessLabel, _, err = label.InitLabels(labelOpts)
 	return err
 }
+
+func sPtr(s string) *string { return &s }

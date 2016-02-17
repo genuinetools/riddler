@@ -13,7 +13,7 @@ import (
 
 const (
 	// SpecVersion is the version of the opencontainers spec that will be created.
-	SpecVersion = "0.2.0"
+	SpecVersion = "0.3.0"
 
 	// DefaultApparmorProfile is docker engine's default apparmor profile for containers.
 	DefaultApparmorProfile = "docker-default"
@@ -159,7 +159,14 @@ func Config(c types.ContainerJSON, info types.Info, capabilities []string) (conf
 					Soft: uint64(1024),
 				},
 			},
+			NoNewPrivileges: true,
 			Resources: &specs.Resources{
+				Devices: []specs.DeviceCgroup{
+					{
+						Allow:  false,
+						Access: sPtr("rwm"),
+					},
+				},
 				DisableOOMKiller: c.HostConfig.Resources.OomKillDisable,
 				OOMScoreAdj:      &c.HostConfig.OomScoreAdj,
 				Memory: &specs.Memory{
