@@ -326,23 +326,16 @@ func Config(c types.ContainerJSON, info types.Info, capabilities []string) (conf
 
 	// fix default mounts for cgroups and devpts without user namespaces
 	// see: https://github.com/opencontainers/runc/issues/225#issuecomment-136519577
-	// TODO: fix this for new config format
-	/*if len(config.Linux.UIDMappings) == 0 {
-		if _, ok := mounts["/sys/fs/cgroup"]; ok {
-			config.Mounts["/sys/fs/cgroup"] = specs.Mount{
-				Type:    "cgroup",
-				Source:  "cgroup",
-				Options: append(config.Mounts["cgroup"].Options, "ro"),
+	if len(config.Linux.UIDMappings) == 0 {
+		for k, mount := range config.Mounts {
+			switch mount.Destination {
+			case "/sys/fs/cgroup":
+				config.Mounts[k].Options = append(config.Mounts[k].Options, "ro")
+			case "/dev/pts":
+				config.Mounts[k].Options = append(config.Mounts[k].Options, "gid=5")
 			}
 		}
-		if _, ok := config.Mounts["/dev/pts"]; ok {
-			config.Mounts["/dev/pts"] = specs.Mount{
-				Type:    "devpts",
-				Source:  "devpts",
-				Options: append(config.Mounts["devpts"].Options, "gid=5"),
-			}
-		}
-	}*/
+	}
 
 	// parse additional groups and add them to gid mappings
 	if err := parseMappings(config, c.HostConfig); err != nil {
