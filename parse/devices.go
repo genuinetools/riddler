@@ -7,14 +7,13 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/Sirupsen/logrus"
 	containertypes "github.com/docker/engine-api/types/container"
 	"github.com/opencontainers/runc/libcontainer/configs"
 	"github.com/opencontainers/runc/libcontainer/devices"
 	"github.com/opencontainers/specs"
 )
 
-func mergeDevices(defaultDevices []*configs.Device, userDevices []specs.Device) (devs []specs.Device, dc []specs.DeviceCgroup) {
+func mergeDevices(defaultDevices []*configs.Device, userDevices []specs.Device, userDeviceCgroup []specs.DeviceCgroup) (devs []specs.Device, dc []specs.DeviceCgroup) {
 	paths := map[string]specs.Device{}
 	for _, d := range userDevices {
 		paths[d.Path] = d
@@ -40,7 +39,7 @@ func mergeDevices(defaultDevices []*configs.Device, userDevices []specs.Device) 
 			})
 		}
 	}
-	return append(devs, userDevices...), dc
+	return append(devs, userDevices...), append(dc, userDeviceCgroup...)
 }
 
 func uint64ptr(i int64) *uint64 {
@@ -48,12 +47,12 @@ func uint64ptr(i int64) *uint64 {
 	return &n
 }
 
-func getDevicesFromPath(deviceMapping containertypes.DeviceMapping) (devs []specs.Device, err error) {
-	device, err := deviceFromPath(deviceMapping.PathOnHost, deviceMapping.CgroupPermissions)
+func getDevicesFromPath(deviceMapping containertypes.DeviceMapping) (devs []specs.Device, dc []specs.DeviceCgroup, err error) {
+	device, deviceCgroup, err := deviceFromPath(deviceMapping.PathOnHost, deviceMapping.CgroupPermissions)
 	// if there was no error, return the device
 	if err == nil {
 		device.Path = deviceMapping.PathInContainer
-		return append(devs, *device), nil
+		return append(devs, *device), append(dc, *deviceCgroup), nil
 	}
 
 	// if the device is not a device node
@@ -65,7 +64,7 @@ func getDevicesFromPath(deviceMapping containertypes.DeviceMapping) (devs []spec
 
 			// mount the internal devices recursively
 			filepath.Walk(deviceMapping.PathOnHost, func(dpath string, f os.FileInfo, e error) error {
-				childDevice, e := deviceFromPath(dpath, deviceMapping.CgroupPermissions)
+				childDevice, childDeviceCgroup, e := deviceFromPath(dpath, deviceMapping.CgroupPermissions)
 				if e != nil {
 					// ignore the device
 					return nil
@@ -74,6 +73,7 @@ func getDevicesFromPath(deviceMapping containertypes.DeviceMapping) (devs []spec
 				// add the device to userSpecified devices
 				childDevice.Path = strings.Replace(dpath, deviceMapping.PathOnHost, deviceMapping.PathInContainer, 1)
 				devs = append(devs, *childDevice)
+				dc = append(dc, *childDeviceCgroup)
 
 				return nil
 			})
@@ -81,17 +81,17 @@ func getDevicesFromPath(deviceMapping containertypes.DeviceMapping) (devs []spec
 	}
 
 	if len(devs) > 0 {
-		return devs, nil
+		return devs, dc, nil
 	}
 
-	return devs, fmt.Errorf("Gathering device information while adding custom device (%s) failed: %s", deviceMapping.PathOnHost, err)
+	return devs, dc, fmt.Errorf("Gathering device information while adding custom device (%s) failed: %s", deviceMapping.PathOnHost, err)
 }
 
 // deviceFromPath takes the path to a device and it's cgroup_permissions(which cannot be easily queried) and looks up the information about a linux device.
-func deviceFromPath(path, permissions string) (*specs.Device, error) {
+func deviceFromPath(path, permissions string) (*specs.Device, *specs.DeviceCgroup, error) {
 	fileInfo, err := os.Lstat(path)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	var (
 		devType                rune
@@ -100,7 +100,7 @@ func deviceFromPath(path, permissions string) (*specs.Device, error) {
 	)
 	switch {
 	case mode&os.ModeDevice == 0:
-		return nil, devices.ErrNotADevice
+		return nil, nil, devices.ErrNotADevice
 	case mode&os.ModeCharDevice != 0:
 		fileModePermissionBits |= syscall.S_IFCHR
 		devType = 'c'
@@ -110,17 +110,26 @@ func deviceFromPath(path, permissions string) (*specs.Device, error) {
 	}
 	statt, ok := fileInfo.Sys().(*syscall.Stat_t)
 	if !ok {
-		return nil, fmt.Errorf("cannot determine the device number for device %s", path)
+		return nil, nil, fmt.Errorf("cannot determine the device number for device %s", path)
 	}
 	devNumber := int(statt.Rdev)
-	logrus.Infof("devPath: %d, path: %s, Permissions: %#v", devType, path, permissions)
-	return &specs.Device{
+	major := devices.Major(devNumber)
+	minor := devices.Minor(devNumber)
+	dev := &specs.Device{
 		Type:     devType,
 		Path:     path,
-		Major:    devices.Major(devNumber),
-		Minor:    devices.Minor(devNumber),
+		Major:    major,
+		Minor:    minor,
 		FileMode: &fileModePermissionBits,
 		UID:      &statt.Uid,
 		GID:      &statt.Gid,
-	}, nil
+	}
+	dc := &specs.DeviceCgroup{
+		Allow:  true,
+		Type:   &devType,
+		Major:  &major,
+		Minor:  &minor,
+		Access: &permissions,
+	}
+	return dev, dc, nil
 }

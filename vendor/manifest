@@ -125,12 +125,6 @@
 			"path": "/proto"
 		},
 		{
-			"importpath": "github.com/jfrazelle/riddler",
-			"repository": "https://github.com/jfrazelle/riddler",
-			"revision": "96557f27b8152dd5f904e986967ce0dcfa9f36d1",
-			"branch": "master"
-		},
-		{
 			"importpath": "github.com/opencontainers/runc/libcontainer",
 			"repository": "https://github.com/opencontainers/runc",
 			"revision": "488e315c218b266de72b390c70595dd5c21b8736",

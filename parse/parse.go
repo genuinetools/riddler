@@ -42,18 +42,18 @@ func parseDevices(config *specs.LinuxSpec, hc *containertypes.HostConfig) error 
 	}
 
 	var userSpecifiedDevices []specs.Device
+	var userSpecifiedDeviceCgroup []specs.DeviceCgroup
 	for _, deviceMapping := range hc.Devices {
-		devs, err := getDevicesFromPath(deviceMapping)
+		devs, dc, err := getDevicesFromPath(deviceMapping)
 		if err != nil {
 			return err
 		}
 
 		userSpecifiedDevices = append(userSpecifiedDevices, devs...)
+		userSpecifiedDeviceCgroup = append(userSpecifiedDeviceCgroup, dc...)
 	}
 
-	var dc []specs.DeviceCgroup
-	config.Linux.Devices, dc = mergeDevices(configs.DefaultSimpleDevices, userSpecifiedDevices)
-	config.Linux.Resources.Devices = append(config.Linux.Resources.Devices, dc...)
+	config.Linux.Devices, config.Linux.Resources.Devices = mergeDevices(configs.DefaultSimpleDevices, userSpecifiedDevices, userSpecifiedDeviceCgroup)
 	return nil
 }
 
