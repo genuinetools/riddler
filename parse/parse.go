@@ -45,6 +45,9 @@ func parseDevices(config *specs.Spec, hc *containertypes.HostConfig) error {
 	var userSpecifiedDevices []specs.Device
 	var userSpecifiedDeviceCgroup []specs.DeviceCgroup
 	for _, deviceMapping := range hc.Devices {
+		if deviceMapping.PathInContainer == "/dev/tty" && !config.Process.Terminal {
+			continue
+		}
 		devs, dc, err := getDevicesFromPath(deviceMapping)
 		if err != nil {
 			return err
@@ -54,7 +57,7 @@ func parseDevices(config *specs.Spec, hc *containertypes.HostConfig) error {
 		userSpecifiedDeviceCgroup = append(userSpecifiedDeviceCgroup, dc...)
 	}
 
-	config.Linux.Devices, config.Linux.Resources.Devices = mergeDevices(configs.DefaultSimpleDevices, userSpecifiedDevices, userSpecifiedDeviceCgroup)
+	config.Linux.Devices, config.Linux.Resources.Devices = mergeDevices(configs.DefaultSimpleDevices, userSpecifiedDevices, userSpecifiedDeviceCgroup, config.Process.Terminal)
 	return nil
 }
 

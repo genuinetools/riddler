@@ -13,13 +13,16 @@ import (
 	"github.com/opencontainers/specs/specs-go"
 )
 
-func mergeDevices(defaultDevices []*configs.Device, userDevices []specs.Device, userDeviceCgroup []specs.DeviceCgroup) (devs []specs.Device, dc []specs.DeviceCgroup) {
+func mergeDevices(defaultDevices []*configs.Device, userDevices []specs.Device, userDeviceCgroup []specs.DeviceCgroup, hasTty bool) (devs []specs.Device, dc []specs.DeviceCgroup) {
 	paths := map[string]specs.Device{}
 	for _, d := range userDevices {
 		paths[d.Path] = d
 	}
 
 	for _, d := range defaultDevices {
+		if d.Path == "/dev/tty" && !hasTty {
+			continue
+		}
 		if _, defined := paths[d.Path]; !defined {
 			t := string(d.Type)
 			devs = append(devs, specs.Device{

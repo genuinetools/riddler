@@ -9,6 +9,8 @@ import (
 	"os/exec"
 	"strings"
 
+	"golang.org/x/net/context"
+
 	"github.com/Sirupsen/logrus"
 	native "github.com/docker/docker/daemon/execdriver/native/template"
 	"github.com/docker/engine-api/client"
@@ -143,13 +145,13 @@ func main() {
 	}
 
 	// get container info
-	c, err := cli.ContainerInspect(nil, arg)
+	c, err := cli.ContainerInspect(context.Background(), arg)
 	if err != nil {
 		logrus.Fatalf("inspecting container (%s) failed: %v", arg, err)
 	}
 
 	// get daemon info
-	info, err := cli.Info(nil)
+	info, err := cli.Info(context.Background())
 	if err != nil {
 		logrus.Fatalf("getting daemon info failed: %v", err)
 	}
