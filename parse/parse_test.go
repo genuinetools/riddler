@@ -6,7 +6,7 @@ import (
 
 	containertypes "github.com/docker/engine-api/types/container"
 	"github.com/opencontainers/runc/libcontainer/user"
-	"github.com/opencontainers/specs"
+	"github.com/opencontainers/specs/specs-go"
 )
 
 type mappings struct {
@@ -97,7 +97,7 @@ func TestParseMappings(t *testing.T) {
 
 	for _, test := range tests {
 		// make config
-		config := &specs.LinuxSpec{
+		config := &specs.Spec{
 			Linux: specs.Linux{
 				GIDMappings: test.gidMap,
 			},
