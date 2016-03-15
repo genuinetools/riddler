@@ -13,7 +13,7 @@ import (
 	native "github.com/docker/docker/daemon/execdriver/native/template"
 	"github.com/docker/engine-api/client"
 	"github.com/jfrazelle/riddler/parse"
-	"github.com/opencontainers/specs"
+	"github.com/opencontainers/specs/specs-go"
 )
 
 const (
@@ -143,13 +143,13 @@ func main() {
 	}
 
 	// get container info
-	c, err := cli.ContainerInspect(arg)
+	c, err := cli.ContainerInspect(nil, arg)
 	if err != nil {
 		logrus.Fatalf("inspecting container (%s) failed: %v", arg, err)
 	}
 
 	// get daemon info
-	info, err := cli.Info()
+	info, err := cli.Info(nil)
 	if err != nil {
 		logrus.Fatalf("getting daemon info failed: %v", err)
 	}
@@ -190,7 +190,7 @@ func checkNoFile(name string) error {
 	return nil
 }
 
-func writeConfig(spec *specs.LinuxSpec) error {
+func writeConfig(spec *specs.Spec) error {
 	if bundle != "" {
 		// change current working directory
 		if err := os.Chdir(bundle); err != nil {

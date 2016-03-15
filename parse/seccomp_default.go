@@ -5,7 +5,7 @@ package parse
 import (
 	"syscall"
 
-	"github.com/opencontainers/specs"
+	"github.com/opencontainers/specs/specs-go"
 )
 
 var defaultSeccompProfile = specs.Seccomp{

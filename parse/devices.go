@@ -10,7 +10,7 @@ import (
 	containertypes "github.com/docker/engine-api/types/container"
 	"github.com/opencontainers/runc/libcontainer/configs"
 	"github.com/opencontainers/runc/libcontainer/devices"
-	"github.com/opencontainers/specs"
+	"github.com/opencontainers/specs/specs-go"
 )
 
 func mergeDevices(defaultDevices []*configs.Device, userDevices []specs.Device, userDeviceCgroup []specs.DeviceCgroup) (devs []specs.Device, dc []specs.DeviceCgroup) {
@@ -21,8 +21,9 @@ func mergeDevices(defaultDevices []*configs.Device, userDevices []specs.Device, 
 
 	for _, d := range defaultDevices {
 		if _, defined := paths[d.Path]; !defined {
+			t := string(d.Type)
 			devs = append(devs, specs.Device{
-				Type:     d.Type,
+				Type:     t,
 				Path:     d.Path,
 				Major:    d.Major,
 				Minor:    d.Minor,
@@ -32,7 +33,7 @@ func mergeDevices(defaultDevices []*configs.Device, userDevices []specs.Device, 
 			})
 			dc = append(dc, specs.DeviceCgroup{
 				Allow:  true,
-				Type:   &d.Type,
+				Type:   &t,
 				Major:  &d.Major,
 				Minor:  &d.Minor,
 				Access: &d.Permissions,
@@ -115,8 +116,9 @@ func deviceFromPath(path, permissions string) (*specs.Device, *specs.DeviceCgrou
 	devNumber := int(statt.Rdev)
 	major := devices.Major(devNumber)
 	minor := devices.Minor(devNumber)
+	t := string(devType)
 	dev := &specs.Device{
-		Type:     devType,
+		Type:     t,
 		Path:     path,
 		Major:    major,
 		Minor:    minor,
@@ -126,7 +128,7 @@ func deviceFromPath(path, permissions string) (*specs.Device, *specs.DeviceCgrou
 	}
 	dc := &specs.DeviceCgroup{
 		Allow:  true,
-		Type:   &devType,
+		Type:   &t,
 		Major:  &major,
 		Minor:  &minor,
 		Access: &permissions,

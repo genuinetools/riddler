@@ -10,18 +10,19 @@ import (
 	"github.com/opencontainers/runc/libcontainer/devices"
 	"github.com/opencontainers/runc/libcontainer/label"
 	"github.com/opencontainers/runc/libcontainer/user"
-	"github.com/opencontainers/specs"
+	"github.com/opencontainers/specs/specs-go"
 )
 
-func parseDevices(config *specs.LinuxSpec, hc *containertypes.HostConfig) error {
+func parseDevices(config *specs.Spec, hc *containertypes.HostConfig) error {
 	if hc.Privileged {
 		hostDevices, err := devices.HostDevices()
 		if err != nil {
 			return fmt.Errorf("getting host devices for privileged mode failed: %v", err)
 		}
 		for _, d := range hostDevices {
+			t := string(d.Type)
 			config.Linux.Devices = append(config.Linux.Devices, specs.Device{
-				Type:     d.Type,
+				Type:     t,
 				Path:     d.Path,
 				Major:    d.Major,
 				Minor:    d.Minor,
@@ -31,7 +32,7 @@ func parseDevices(config *specs.LinuxSpec, hc *containertypes.HostConfig) error 
 			})
 			config.Linux.Resources.Devices = append(config.Linux.Resources.Devices, specs.DeviceCgroup{
 				Allow:  true,
-				Type:   &d.Type,
+				Type:   &t,
 				Major:  &d.Major,
 				Minor:  &d.Minor,
 				Access: &d.Permissions,
@@ -57,7 +58,7 @@ func parseDevices(config *specs.LinuxSpec, hc *containertypes.HostConfig) error 
 	return nil
 }
 
-func parseMappings(config *specs.LinuxSpec, hc *containertypes.HostConfig) error {
+func parseMappings(config *specs.Spec, hc *containertypes.HostConfig) error {
 	for _, g := range hc.GroupAdd {
 		var newGidMap = []specs.IDMapping{}
 		group, err := user.LookupGroup(g)
@@ -95,7 +96,7 @@ func parseMappings(config *specs.LinuxSpec, hc *containertypes.HostConfig) error
 	return nil
 }
 
-func parseSecurityOpt(config *specs.LinuxSpec, hc *containertypes.HostConfig) error {
+func parseSecurityOpt(config *specs.Spec, hc *containertypes.HostConfig) error {
 	var (
 		labelOpts []string
 		err       error
@@ -111,7 +112,7 @@ func parseSecurityOpt(config *specs.LinuxSpec, hc *containertypes.HostConfig) er
 		case "label":
 			labelOpts = append(labelOpts, con[1])
 		case "apparmor":
-			config.Linux.ApparmorProfile = con[1]
+			config.Process.ApparmorProfile = con[1]
 		case "seccomp":
 			customSeccompProfile = true
 			if con[1] != "unconfined" {
@@ -119,7 +120,7 @@ func parseSecurityOpt(config *specs.LinuxSpec, hc *containertypes.HostConfig) er
 				if err := json.Unmarshal([]byte(con[1]), &seccomp); err != nil {
 					return fmt.Errorf("parsing seccomp profile failed: %v", err)
 				}
-				config.Linux.Seccomp = seccomp
+				config.Linux.Seccomp = &seccomp
 			}
 		default:
 			return fmt.Errorf("invalid security-opt: %q", opt)
@@ -127,19 +128,19 @@ func parseSecurityOpt(config *specs.LinuxSpec, hc *containertypes.HostConfig) er
 	}
 
 	// set default apparmor profile if possible
-	if config.Linux.ApparmorProfile == "" && !hc.Privileged {
-		config.Linux.ApparmorProfile = DefaultApparmorProfile
+	if config.Process.ApparmorProfile == "" && !hc.Privileged {
+		config.Process.ApparmorProfile = DefaultApparmorProfile
 	}
-	if config.Linux.ApparmorProfile == "" && hc.Privileged {
-		config.Linux.ApparmorProfile = "unconfined"
+	if config.Process.ApparmorProfile == "" && hc.Privileged {
+		config.Process.ApparmorProfile = "unconfined"
 	}
 
 	// set default seccomp profile if the user did not pass a custom profile
 	if !customSeccompProfile && !hc.Privileged {
-		config.Linux.Seccomp = defaultSeccompProfile
+		config.Linux.Seccomp = &defaultSeccompProfile
 	}
 
-	config.Linux.SelinuxProcessLabel, _, err = label.InitLabels(labelOpts)
+	config.Process.SelinuxLabel, _, err = label.InitLabels(labelOpts)
 	return err
 }
 

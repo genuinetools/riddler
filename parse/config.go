@@ -8,7 +8,7 @@ import (
 	"github.com/docker/docker/daemon/execdriver"
 	"github.com/docker/engine-api/types"
 	"github.com/opencontainers/runc/libcontainer/user"
-	"github.com/opencontainers/specs"
+	"github.com/opencontainers/specs/specs-go"
 )
 
 const (
@@ -102,29 +102,37 @@ var (
 )
 
 // Config takes ContainerJSON and Daemon Info and converts it into the opencontainers spec.
-func Config(c types.ContainerJSON, info types.Info, capabilities []string) (config *specs.LinuxSpec, err error) {
-	config = &specs.LinuxSpec{
-		Spec: specs.Spec{
-			Version: SpecVersion,
-			Platform: specs.Platform{
-				OS:   info.OSType,
-				Arch: info.Architecture,
-			},
-			Process: specs.Process{
-				Terminal: c.Config.Tty,
-				User:     specs.User{
-				// TODO: user stuffs
-				},
-				Args: append([]string{c.Path}, c.Args...),
-				Env:  c.Config.Env,
-				Cwd:  c.Config.WorkingDir,
-			},
-			Root: specs.Root{
-				Path:     "rootfs",
-				Readonly: c.HostConfig.ReadonlyRootfs,
-			},
-			Mounts: []specs.Mount{},
+func Config(c types.ContainerJSON, info types.Info, capabilities []string) (config *specs.Spec, err error) {
+	config = &specs.Spec{
+		Version: SpecVersion,
+		Platform: specs.Platform{
+			OS:   info.OSType,
+			Arch: info.Architecture,
 		},
+		Process: specs.Process{
+			Terminal: c.Config.Tty,
+			User:     specs.User{
+			// TODO: user stuffs
+			},
+			Args: append([]string{c.Path}, c.Args...),
+			Env:  c.Config.Env,
+			Cwd:  c.Config.WorkingDir,
+			// TODO: add parsing of Ulimits
+			Rlimits: []specs.Rlimit{
+				{
+					Type: "RLIMIT_NOFILE",
+					Hard: uint64(1024),
+					Soft: uint64(1024),
+				},
+			},
+			NoNewPrivileges: true,
+			ApparmorProfile: c.AppArmorProfile,
+		},
+		Root: specs.Root{
+			Path:     "rootfs",
+			Readonly: c.HostConfig.ReadonlyRootfs,
+		},
+		Mounts: []specs.Mount{},
 		Linux: specs.Linux{
 			Namespaces: []specs.Namespace{
 				{
@@ -151,15 +159,6 @@ func Config(c types.ContainerJSON, info types.Info, capabilities []string) (conf
 					Size:        DefaultUserNSMapSize,
 				},
 			},
-			// TODO: add parsing of Ulimits
-			Rlimits: []specs.Rlimit{
-				{
-					Type: "RLIMIT_NOFILE",
-					Hard: uint64(1024),
-					Soft: uint64(1024),
-				},
-			},
-			NoNewPrivileges: true,
 			Resources: &specs.Resources{
 				Devices: []specs.DeviceCgroup{
 					{
@@ -191,7 +190,6 @@ func Config(c types.ContainerJSON, info types.Info, capabilities []string) (conf
 					// TODO: add parsing for Throttle/Weight Devices
 				},
 			},
-			ApparmorProfile:   c.AppArmorProfile,
 			RootfsPropagation: "",
 		},
 	}
@@ -205,7 +203,7 @@ func Config(c types.ContainerJSON, info types.Info, capabilities []string) (conf
 	if c.Config.User != "" {
 		u, err := user.LookupUser(c.Config.User)
 		if err != nil {
-			config.Spec.Process.User = specs.User{
+			config.Process.User = specs.User{
 				UID: uint32(u.Uid),
 				GID: uint32(u.Gid),
 			}
@@ -220,7 +218,7 @@ func Config(c types.ContainerJSON, info types.Info, capabilities []string) (conf
 		if err != nil {
 			return nil, fmt.Errorf("Looking up group (%s) failed: %v", group, err)
 		}
-		config.Spec.Process.User.AdditionalGids = append(config.Spec.Process.User.AdditionalGids, uint32(g.Gid))
+		config.Process.User.AdditionalGids = append(config.Process.User.AdditionalGids, uint32(g.Gid))
 	}
 
 	// get the hostname, if the hostname is the name as the first 12 characters of the id,
@@ -236,28 +234,28 @@ func Config(c types.ContainerJSON, info types.Info, capabilities []string) (conf
 	}
 
 	// get the capabilities
-	config.Linux.Capabilities, err = execdriver.TweakCapabilities(capabilities, c.HostConfig.CapAdd.Slice(), c.HostConfig.CapDrop.Slice())
+	config.Process.Capabilities, err = execdriver.TweakCapabilities(capabilities, c.HostConfig.CapAdd, c.HostConfig.CapDrop)
 	if err != nil {
 		return nil, fmt.Errorf("setting capabilities failed: %v", err)
 	}
 
 	// add CAP_ prefix
 	// TODO: this is awful
-	for i, cap := range config.Linux.Capabilities {
+	for i, cap := range config.Process.Capabilities {
 		if !strings.HasPrefix(cap, "CAP_") {
-			config.Linux.Capabilities[i] = fmt.Sprintf("CAP_%s", cap)
+			config.Process.Capabilities[i] = fmt.Sprintf("CAP_%s", cap)
 		}
 	}
 
 	// if we have a container that needs a terminal but no env vars, then set
 	// default env vars for the terminal to function
-	if config.Spec.Process.Terminal && len(config.Spec.Process.Env) <= 0 {
-		config.Spec.Process.Env = DefaultTerminalEnv
+	if config.Process.Terminal && len(config.Process.Env) <= 0 {
+		config.Process.Env = DefaultTerminalEnv
 	}
-	if config.Spec.Process.Terminal {
+	if config.Process.Terminal {
 		// make sure we have TERM set
 		var termSet bool
-		for _, env := range config.Spec.Process.Env {
+		for _, env := range config.Process.Env {
 			if strings.HasPrefix(env, "TERM=") {
 				termSet = true
 				break
@@ -265,7 +263,7 @@ func Config(c types.ContainerJSON, info types.Info, capabilities []string) (conf
 		}
 		if !termSet {
 			// set the term variable
-			config.Spec.Process.Env = append(config.Spec.Process.Env, fmt.Sprintf("TERM=%s", DefaultTerminal))
+			config.Process.Env = append(config.Process.Env, fmt.Sprintf("TERM=%s", DefaultTerminal))
 		}
 	}
 
