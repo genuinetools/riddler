@@ -127,14 +127,14 @@
 		{
 			"importpath": "github.com/opencontainers/runc/libcontainer",
 			"repository": "https://github.com/opencontainers/runc",
-			"revision": "488e315c218b266de72b390c70595dd5c21b8736",
+			"revision": "v0.0.9",
 			"branch": "master",
 			"path": "/libcontainer"
 		},
 		{
 			"importpath": "github.com/opencontainers/specs",
 			"repository": "https://github.com/opencontainers/specs",
-			"revision": "v0.3.0",
+			"revision": "v0.4.0",
 			"branch": "master"
 		},
 		{
