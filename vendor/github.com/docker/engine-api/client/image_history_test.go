@@ -9,15 +9,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/docker/engine-api/client/transport"
 	"github.com/docker/engine-api/types"
+	"golang.org/x/net/context"
 )
 
 func TestImageHistoryError(t *testing.T) {
 	client := &Client{
-		transport: transport.NewMockClient(nil, transport.ErrorMock(http.StatusInternalServerError, "Server error")),
+		transport: newMockClient(nil, errorMock(http.StatusInternalServerError, "Server error")),
 	}
-	_, err := client.ImageHistory("nothing")
+	_, err := client.ImageHistory(context.Background(), "nothing")
 	if err == nil || err.Error() != "Error response from daemon: Server error" {
 		t.Fatalf("expected a Server error, got %v", err)
 	}
@@ -26,7 +26,7 @@ func TestImageHistoryError(t *testing.T) {
 func TestImageHistory(t *testing.T) {
 	expectedURL := "/images/image_id/history"
 	client := &Client{
-		transport: transport.NewMockClient(nil, func(r *http.Request) (*http.Response, error) {
+		transport: newMockClient(nil, func(r *http.Request) (*http.Response, error) {
 			if !strings.HasPrefix(r.URL.Path, expectedURL) {
 				return nil, fmt.Errorf("Expected URL '%s', got '%s'", expectedURL, r.URL)
 			}
@@ -50,7 +50,7 @@ func TestImageHistory(t *testing.T) {
 			}, nil
 		}),
 	}
-	imageHistories, err := client.ImageHistory("image_id")
+	imageHistories, err := client.ImageHistory(context.Background(), "image_id")
 	if err != nil {
 		t.Fatal(err)
 	}

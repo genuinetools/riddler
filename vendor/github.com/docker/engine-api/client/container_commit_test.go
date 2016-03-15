@@ -8,15 +8,15 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/docker/engine-api/client/transport"
 	"github.com/docker/engine-api/types"
+	"golang.org/x/net/context"
 )
 
 func TestContainerCommitError(t *testing.T) {
 	client := &Client{
-		transport: transport.NewMockClient(nil, transport.ErrorMock(http.StatusInternalServerError, "Server error")),
+		transport: newMockClient(nil, errorMock(http.StatusInternalServerError, "Server error")),
 	}
-	_, err := client.ContainerCommit(types.ContainerCommitOptions{
+	_, err := client.ContainerCommit(context.Background(), types.ContainerCommitOptions{
 		ContainerID: "nothing",
 	})
 	if err == nil || err.Error() != "Error response from daemon: Server error" {
@@ -33,7 +33,7 @@ func TestContainerCommit(t *testing.T) {
 	expectedChanges := []string{"change1", "change2"}
 
 	client := &Client{
-		transport: transport.NewMockClient(nil, func(req *http.Request) (*http.Response, error) {
+		transport: newMockClient(nil, func(req *http.Request) (*http.Response, error) {
 			query := req.URL.Query()
 			containerID := query.Get("container")
 			if containerID != expectedContainerID {
@@ -76,7 +76,7 @@ func TestContainerCommit(t *testing.T) {
 		}),
 	}
 
-	r, err := client.ContainerCommit(types.ContainerCommitOptions{
+	r, err := client.ContainerCommit(context.Background(), types.ContainerCommitOptions{
 		ContainerID:    expectedContainerID,
 		RepositoryName: expectedRepositoryName,
 		Tag:            expectedTag,

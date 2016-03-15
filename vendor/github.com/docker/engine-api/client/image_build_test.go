@@ -11,7 +11,6 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/docker/engine-api/client/transport"
 	"github.com/docker/engine-api/types"
 	"github.com/docker/engine-api/types/container"
 	"github.com/docker/go-units"
@@ -19,7 +18,7 @@ import (
 
 func TestImageBuildError(t *testing.T) {
 	client := &Client{
-		transport: transport.NewMockClient(nil, transport.ErrorMock(http.StatusInternalServerError, "Server error")),
+		transport: newMockClient(nil, errorMock(http.StatusInternalServerError, "Server error")),
 	}
 	_, err := client.ImageBuild(context.Background(), types.ImageBuildOptions{})
 	if err == nil || err.Error() != "Error response from daemon: Server error" {
@@ -144,8 +143,7 @@ func TestImageBuild(t *testing.T) {
 			buildOptions: types.ImageBuildOptions{
 				AuthConfigs: map[string]types.AuthConfig{
 					"https://index.docker.io/v1/": {
-						Auth:  "dG90bwo=",
-						Email: "john@doe.com",
+						Auth: "dG90bwo=",
 					},
 				},
 			},
@@ -153,13 +151,13 @@ func TestImageBuild(t *testing.T) {
 				"rm": "0",
 			},
 			expectedTags:           []string{},
-			expectedRegistryConfig: "eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsiYXV0aCI6ImRHOTBid289IiwiZW1haWwiOiJqb2huQGRvZS5jb20ifX0=",
+			expectedRegistryConfig: "eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsiYXV0aCI6ImRHOTBid289In19",
 		},
 	}
 	for _, buildCase := range buildCases {
 		expectedURL := "/build"
 		client := &Client{
-			transport: transport.NewMockClient(nil, func(r *http.Request) (*http.Response, error) {
+			transport: newMockClient(nil, func(r *http.Request) (*http.Response, error) {
 				if !strings.HasPrefix(r.URL.Path, expectedURL) {
 					return nil, fmt.Errorf("Expected URL '%s', got '%s'", expectedURL, r.URL)
 				}

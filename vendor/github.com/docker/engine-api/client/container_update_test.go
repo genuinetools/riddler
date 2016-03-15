@@ -8,15 +8,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/docker/engine-api/client/transport"
 	"github.com/docker/engine-api/types/container"
+	"golang.org/x/net/context"
 )
 
 func TestContainerUpdateError(t *testing.T) {
 	client := &Client{
-		transport: transport.NewMockClient(nil, transport.ErrorMock(http.StatusInternalServerError, "Server error")),
+		transport: newMockClient(nil, errorMock(http.StatusInternalServerError, "Server error")),
 	}
-	err := client.ContainerUpdate("nothing", container.UpdateConfig{})
+	err := client.ContainerUpdate(context.Background(), "nothing", container.UpdateConfig{})
 	if err == nil || err.Error() != "Error response from daemon: Server error" {
 		t.Fatalf("expected a Server Error, got %v", err)
 	}
@@ -25,7 +25,7 @@ func TestContainerUpdateError(t *testing.T) {
 func TestContainerUpdate(t *testing.T) {
 	expectedURL := "/containers/container_id/update"
 	client := &Client{
-		transport: transport.NewMockClient(nil, func(req *http.Request) (*http.Response, error) {
+		transport: newMockClient(nil, func(req *http.Request) (*http.Response, error) {
 			if !strings.HasPrefix(req.URL.Path, expectedURL) {
 				return nil, fmt.Errorf("Expected URL '%s', got '%s'", expectedURL, req.URL)
 			}
@@ -36,7 +36,7 @@ func TestContainerUpdate(t *testing.T) {
 		}),
 	}
 
-	err := client.ContainerUpdate("container_id", container.UpdateConfig{
+	err := client.ContainerUpdate(context.Background(), "container_id", container.UpdateConfig{
 		Resources: container.Resources{
 			CPUPeriod: 1,
 		},

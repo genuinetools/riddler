@@ -7,14 +7,14 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/docker/engine-api/client/transport"
+	"golang.org/x/net/context"
 )
 
 func TestContainerKillError(t *testing.T) {
 	client := &Client{
-		transport: transport.NewMockClient(nil, transport.ErrorMock(http.StatusInternalServerError, "Server error")),
+		transport: newMockClient(nil, errorMock(http.StatusInternalServerError, "Server error")),
 	}
-	err := client.ContainerKill("nothing", "SIGKILL")
+	err := client.ContainerKill(context.Background(), "nothing", "SIGKILL")
 	if err == nil || err.Error() != "Error response from daemon: Server error" {
 		t.Fatalf("expected a Server Error, got %v", err)
 	}
@@ -22,7 +22,7 @@ func TestContainerKillError(t *testing.T) {
 
 func TestContainerKill(t *testing.T) {
 	client := &Client{
-		transport: transport.NewMockClient(nil, func(req *http.Request) (*http.Response, error) {
+		transport: newMockClient(nil, func(req *http.Request) (*http.Response, error) {
 			signal := req.URL.Query().Get("signal")
 			if signal != "SIGKILL" {
 				return nil, fmt.Errorf("signal not set in URL query properly. Expected 'SIGKILL', got %s", signal)
@@ -34,7 +34,7 @@ func TestContainerKill(t *testing.T) {
 		}),
 	}
 
-	err := client.ContainerKill("container_id", "SIGKILL")
+	err := client.ContainerKill(context.Background(), "container_id", "SIGKILL")
 	if err != nil {
 		t.Fatal(err)
 	}

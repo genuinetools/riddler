@@ -8,14 +8,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/docker/engine-api/client/transport"
+	"golang.org/x/net/context"
 )
 
 func TestContainerRestartError(t *testing.T) {
 	client := &Client{
-		transport: transport.NewMockClient(nil, transport.ErrorMock(http.StatusInternalServerError, "Server error")),
+		transport: newMockClient(nil, errorMock(http.StatusInternalServerError, "Server error")),
 	}
-	err := client.ContainerRestart("nothing", 0)
+	err := client.ContainerRestart(context.Background(), "nothing", 0)
 	if err == nil || err.Error() != "Error response from daemon: Server error" {
 		t.Fatalf("expected a Server Error, got %v", err)
 	}
@@ -24,7 +24,7 @@ func TestContainerRestartError(t *testing.T) {
 func TestContainerRestart(t *testing.T) {
 	expectedURL := "/containers/container_id/restart"
 	client := &Client{
-		transport: transport.NewMockClient(nil, func(req *http.Request) (*http.Response, error) {
+		transport: newMockClient(nil, func(req *http.Request) (*http.Response, error) {
 			if !strings.HasPrefix(req.URL.Path, expectedURL) {
 				return nil, fmt.Errorf("Expected URL '%s', got '%s'", expectedURL, req.URL)
 			}
@@ -39,7 +39,7 @@ func TestContainerRestart(t *testing.T) {
 		}),
 	}
 
-	err := client.ContainerRestart("container_id", 100)
+	err := client.ContainerRestart(context.Background(), "container_id", 100)
 	if err != nil {
 		t.Fatal(err)
 	}

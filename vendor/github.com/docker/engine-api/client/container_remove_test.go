@@ -8,15 +8,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/docker/engine-api/client/transport"
 	"github.com/docker/engine-api/types"
+	"golang.org/x/net/context"
 )
 
 func TestContainerRemoveError(t *testing.T) {
 	client := &Client{
-		transport: transport.NewMockClient(nil, transport.ErrorMock(http.StatusInternalServerError, "Server error")),
+		transport: newMockClient(nil, errorMock(http.StatusInternalServerError, "Server error")),
 	}
-	err := client.ContainerRemove(types.ContainerRemoveOptions{})
+	err := client.ContainerRemove(context.Background(), types.ContainerRemoveOptions{})
 	if err == nil || err.Error() != "Error response from daemon: Server error" {
 		t.Fatalf("expected a Server Error, got %v", err)
 	}
@@ -25,7 +25,7 @@ func TestContainerRemoveError(t *testing.T) {
 func TestContainerRemove(t *testing.T) {
 	expectedURL := "/containers/container_id"
 	client := &Client{
-		transport: transport.NewMockClient(nil, func(req *http.Request) (*http.Response, error) {
+		transport: newMockClient(nil, func(req *http.Request) (*http.Response, error) {
 			if !strings.HasPrefix(req.URL.Path, expectedURL) {
 				return nil, fmt.Errorf("Expected URL '%s', got '%s'", expectedURL, req.URL)
 			}
@@ -49,7 +49,7 @@ func TestContainerRemove(t *testing.T) {
 		}),
 	}
 
-	err := client.ContainerRemove(types.ContainerRemoveOptions{
+	err := client.ContainerRemove(context.Background(), types.ContainerRemoveOptions{
 		ContainerID:   "container_id",
 		RemoveVolumes: true,
 		Force:         true,
