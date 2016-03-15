@@ -7,7 +7,13 @@ import (
 	"github.com/opencontainers/runc/libcontainer/configs"
 )
 
-const defaultMountFlags = syscall.MS_NOEXEC | syscall.MS_NOSUID | syscall.MS_NODEV
+const (
+	defaultMountFlags = syscall.MS_NOEXEC | syscall.MS_NOSUID | syscall.MS_NODEV
+)
+
+var (
+	defaultMemSwap int64 = -1
+)
 
 // New returns the docker default configuration for libcontainer
 func New() *configs.Config {
@@ -40,7 +46,7 @@ func New() *configs.Config {
 			ScopePrefix: "docker", // systemd only
 			Resources: &configs.Resources{
 				AllowAllDevices:  false,
-				MemorySwappiness: -1,
+				MemorySwappiness: &defaultMemSwap,
 			},
 		},
 		Mounts: []*configs.Mount{
