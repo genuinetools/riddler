@@ -3,6 +3,7 @@ MAINTAINER Jessica Frazelle <jess@docker.com>
 
 ENV PATH /go/bin:/usr/local/go/bin:$PATH
 ENV GOPATH /go
+ENV GO15VENDOREXPERIMENT 1
 
 RUN	apk update && apk add \
 	ca-certificates \
@@ -21,8 +22,6 @@ RUN buildDeps=' \
 	&& apk update \
 	&& apk add $buildDeps \
 	&& cd /go/src/github.com/jfrazelle/riddler \
-	&& go get -d -v github.com/jfrazelle/riddler \
-	&& go get -d -v github.com/seccomp/libseccomp-golang \
 	&& go build -o /usr/bin/riddler . \
 	&& apk del $buildDeps \
 	&& rm -rf /var/cache/apk/* \
