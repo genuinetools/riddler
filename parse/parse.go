@@ -107,9 +107,13 @@ func parseSecurityOpt(config *specs.Spec, hc *containertypes.HostConfig) error {
 
 	var customSeccompProfile bool
 	for _, opt := range hc.SecurityOpt {
-		con := strings.SplitN(opt, ":", 2)
-		if len(con) == 1 {
-			return fmt.Errorf("invalid --security-opt: %q", opt)
+		con := strings.SplitN(opt, "=", 2)
+		if len(con) <= 1 {
+			// try : instead
+			con = strings.SplitN(opt, ":", 2)
+			if len(con) == 1 {
+				return fmt.Errorf("invalid --security-opt: %q", opt)
+			}
 		}
 		switch con[0] {
 		case "label":

@@ -90,13 +90,13 @@ var (
 			Destination: "/etc/hosts",
 			Type:        "bind",
 			Source:      "/etc/hosts",
-			Options:     []string{"rbind", "ro"},
+			Options:     []string{"rbind", "rprivate", "ro"},
 		},
 		{
 			Destination: "/etc/resolv.conf",
 			Type:        "bind",
 			Source:      "/etc/resolv.conf",
-			Options:     []string{"rbind", "ro"},
+			Options:     []string{"rbind", "rprivate", "ro"},
 		},
 	}
 )
@@ -299,7 +299,7 @@ func Config(c types.ContainerJSON, info types.Info, capabilities []string) (conf
 		if mount.Mode != "" {
 			opt = append(opt, mount.Mode)
 		}
-		opt = append(opt, "rbind")
+		opt = append(opt, []string{"rbind", "rprivate"}...)
 
 		config.Mounts = append(config.Mounts, specs.Mount{
 			Destination: mount.Destination,
