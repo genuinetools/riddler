@@ -17,6 +17,7 @@ RUN buildDeps=' \
 		gcc \
 		libc-dev \
 		libgcc \
+		linux-headers \
 	' \
 	set -x \
 	&& apk update \
