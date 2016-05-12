@@ -42,6 +42,8 @@ var (
 	hooks      specs.Hooks
 	hookflags  stringSlice
 	force      bool
+	idroot     uint32
+	idlen      uint32
 
 	debug   bool
 	version bool
@@ -90,10 +92,14 @@ func (s stringSlice) ParseHooks() (hooks specs.Hooks, err error) {
 }
 
 func init() {
+	var idrootVar, idlenVar int
 	// parse flags
 	flag.StringVar(&dockerHost, "host", "unix:///var/run/docker.sock", "Docker Daemon socket(s) to connect to")
 	flag.StringVar(&bundle, "bundle", "", "Path to the root of the bundle directory")
 	flag.Var(&hookflags, "hook", "Hooks to prefill into spec file. (ex. --hook prestart:netns)")
+
+	flag.IntVar(&idrootVar, "idroot", 0, "Root UID/GID for user namespaces")
+	flag.IntVar(&idlenVar, "idlen", 0, "Length of UID/GID ID space ranges for user namespaces")
 
 	flag.BoolVar(&force, "force", false, "force overwrite existing files")
 	flag.BoolVar(&force, "f", false, "force overwrite existing files")
@@ -108,6 +114,8 @@ func init() {
 	}
 
 	flag.Parse()
+	idroot = uint32(idrootVar)
+	idlen = uint32(idlenVar)
 
 	if flag.NArg() < 1 {
 		usageAndExit("Pass the container name or ID.", 1)
@@ -157,7 +165,7 @@ func main() {
 	}
 
 	t := native.New()
-	spec, err := parse.Config(c, info, t.Capabilities)
+	spec, err := parse.Config(c, info, t.Capabilities, idroot, idlen)
 	if err != nil {
 		logrus.Fatalf("Spec config conversion for %s failed: %v", arg, err)
 	}
