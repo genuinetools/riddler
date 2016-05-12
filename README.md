@@ -38,7 +38,7 @@ $ riddler --help
 # just pass the container name or id on run
 
 $ riddler chrome
-config.json and runtime.json have been saved.
+config.json has been saved.
 ```
 
 ### TODO

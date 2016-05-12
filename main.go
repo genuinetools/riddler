@@ -168,7 +168,7 @@ func main() {
 		logrus.Fatal(err)
 	}
 
-	fmt.Printf("%s has been saved.", specConfig)
+	fmt.Printf("%s has been saved.\n", specConfig)
 }
 
 func usageAndExit(message string, exitCode int) {
