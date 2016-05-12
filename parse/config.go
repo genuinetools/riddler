@@ -102,7 +102,14 @@ var (
 )
 
 // Config takes ContainerJSON and Daemon Info and converts it into the opencontainers spec.
-func Config(c types.ContainerJSON, info types.Info, capabilities []string) (config *specs.Spec, err error) {
+func Config(c types.ContainerJSON, info types.Info, capabilities []string, idroot, idlen uint32) (config *specs.Spec, err error) {
+	// for user namespaces use defaults unless another range specified
+	if idroot == 0 {
+		idroot = DefaultUserNSHostID
+	}
+	if idlen == 0 {
+		idlen = DefaultUserNSMapSize
+	}
 	config = &specs.Spec{
 		Version: SpecVersion,
 		Platform: specs.Platform{
@@ -148,15 +155,15 @@ func Config(c types.ContainerJSON, info types.Info, capabilities []string) (conf
 			UIDMappings: []specs.IDMapping{
 				{
 					ContainerID: 0,
-					HostID:      DefaultUserNSHostID,
-					Size:        DefaultUserNSMapSize,
+					HostID:      idroot,
+					Size:        idlen,
 				},
 			},
 			GIDMappings: []specs.IDMapping{
 				{
 					ContainerID: 0,
-					HostID:      DefaultUserNSHostID,
-					Size:        DefaultUserNSMapSize,
+					HostID:      idroot,
+					Size:        idlen,
 				},
 			},
 			Resources: &specs.Resources{
