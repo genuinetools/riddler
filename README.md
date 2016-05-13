@@ -1,7 +1,6 @@
 # riddler
 
-[![Circle CI](https://circleci.com/gh/jfrazelle/riddler.svg?style=svg)](https://circleci.com/gh/jfrazelle/riddler)
-
+[![Travis CI](https://travis-ci.org/jfrazelle/riddler.svg?branch=master)](https://travis-ci.org/jfrazelle/riddler)
 
 `docker inspect` to
 [opencontainers/specs](https://github.com/opencontainers/specs)
