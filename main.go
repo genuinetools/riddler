@@ -15,7 +15,7 @@ import (
 	native "github.com/docker/docker/daemon/execdriver/native/template"
 	"github.com/docker/engine-api/client"
 	"github.com/jfrazelle/riddler/parse"
-	"github.com/opencontainers/specs/specs-go"
+	specs "github.com/opencontainers/specs/specs-go"
 )
 
 const (
@@ -128,6 +128,14 @@ func init() {
 
 	// parse the arg
 	arg = flag.Args()[0]
+	if arg == "help" {
+		usageAndExit("", 0)
+	}
+
+	if arg == "version" {
+		fmt.Printf("%s", VERSION)
+		os.Exit(0)
+	}
 
 	// set log level
 	if debug {
