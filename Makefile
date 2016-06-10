@@ -1,6 +1,7 @@
 # Set an output prefix, which is the local directory if not specified
 PREFIX?=$(shell pwd)
 BUILDTAGS=seccomp apparmor
+export GO15VENDOREXPERIMENT=1
 
 .PHONY: clean all fmt vet lint build test install static
 .DEFAULT: default

@@ -117,21 +117,17 @@ func init() {
 	idroot = uint32(idrootVar)
 	idlen = uint32(idlenVar)
 
+	if version {
+		fmt.Printf("%s\n", VERSION)
+		os.Exit(0)
+	}
+
 	if flag.NArg() < 1 {
 		usageAndExit("Pass the container name or ID.", 1)
 	}
 
 	// parse the arg
 	arg = flag.Args()[0]
-
-	if arg == "help" {
-		usageAndExit("", 0)
-	}
-
-	if version || arg == "version" {
-		fmt.Printf("%s", VERSION)
-		os.Exit(0)
-	}
 
 	// set log level
 	if debug {
