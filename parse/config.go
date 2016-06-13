@@ -101,8 +101,8 @@ var (
 	}
 )
 
-// Config takes ContainerJSON and Daemon Info and converts it into the opencontainers spec.
-func Config(c types.ContainerJSON, info types.Info, capabilities []string, idroot, idlen uint32) (config *specs.Spec, err error) {
+// Config takes ContainerJSON and converts it into the opencontainers spec.
+func Config(c types.ContainerJSON, osType, architecture string, capabilities []string, idroot, idlen uint32) (config *specs.Spec, err error) {
 	// for user namespaces use defaults unless another range specified
 	if idroot == 0 {
 		idroot = DefaultUserNSHostID
@@ -113,8 +113,8 @@ func Config(c types.ContainerJSON, info types.Info, capabilities []string, idroo
 	config = &specs.Spec{
 		Version: SpecVersion,
 		Platform: specs.Platform{
-			OS:   info.OSType,
-			Arch: info.Architecture,
+			OS:   osType,
+			Arch: architecture,
 		},
 		Process: specs.Process{
 			Terminal: c.Config.Tty,

@@ -13,6 +13,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	native "github.com/docker/docker/daemon/execdriver/native/template"
+	"github.com/docker/docker/pkg/platform"
 	"github.com/docker/engine-api/client"
 	"github.com/jfrazelle/riddler/parse"
 	specs "github.com/opencontainers/specs/specs-go"
@@ -162,14 +163,8 @@ func main() {
 		logrus.Fatalf("inspecting container (%s) failed: %v", arg, err)
 	}
 
-	// get daemon info
-	info, err := cli.Info(context.Background())
-	if err != nil {
-		logrus.Fatalf("getting daemon info failed: %v", err)
-	}
-
 	t := native.New()
-	spec, err := parse.Config(c, info, t.Capabilities, idroot, idlen)
+	spec, err := parse.Config(c, platform.OSType, platform.Architecture, t.Capabilities, idroot, idlen)
 	if err != nil {
 		logrus.Fatalf("Spec config conversion for %s failed: %v", arg, err)
 	}
