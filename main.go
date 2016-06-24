@@ -76,7 +76,7 @@ func (s stringSlice) ParseHooks() (hooks specs.Hooks, err error) {
 			Path: exec,
 		}
 		if len(cmd) > 1 {
-			hook.Args = cmd[:1]
+			hook.Args = append(hook.Args, cmd...)
 		}
 		switch parts[0] {
 		case "prestart":
