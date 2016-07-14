@@ -285,7 +285,7 @@ func Config(c types.ContainerJSON, osType, architecture string, capabilities []s
 			Type: "pid",
 		})
 	}
-	if !c.HostConfig.NetworkMode.IsHost() && !c.HostConfig.PidMode.IsHost() && !c.HostConfig.Privileged {
+	if c.HostConfig.UsernsMode.Valid() && !c.HostConfig.NetworkMode.IsHost() && !c.HostConfig.PidMode.IsHost() && !c.HostConfig.Privileged {
 		config.Linux.Namespaces = append(config.Linux.Namespaces, specs.Namespace{
 			Type: "user",
 		})
