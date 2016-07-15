@@ -142,6 +142,11 @@ func parseSecurityOpt(config *specs.Spec, hc *containertypes.HostConfig) error {
 		config.Process.ApparmorProfile = "unconfined"
 	}
 
+	// runc does not like "unconfined" here
+	if config.Process.ApparmorProfile == "unconfined" {
+		config.Process.ApparmorProfile = ""
+	}
+
 	// set default seccomp profile if the user did not pass a custom profile
 	if !customSeccompProfile && !hc.Privileged {
 		config.Linux.Seccomp = &defaultSeccompProfile
