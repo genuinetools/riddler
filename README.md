@@ -1,6 +1,6 @@
 # riddler
 
-[![Travis CI](https://travis-ci.org/jfrazelle/riddler.svg?branch=master)](https://travis-ci.org/jfrazelle/riddler)
+[![Travis CI](https://travis-ci.org/jessfraz/riddler.svg?branch=master)](https://travis-ci.org/jessfraz/riddler)
 
 
 `docker inspect` to

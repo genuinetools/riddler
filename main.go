@@ -15,7 +15,7 @@ import (
 	native "github.com/docker/docker/daemon/execdriver/native/template"
 	"github.com/docker/docker/pkg/platform"
 	"github.com/docker/engine-api/client"
-	"github.com/jfrazelle/riddler/parse"
+	"github.com/jessfraz/riddler/parse"
 	specs "github.com/opencontainers/specs/specs-go"
 )
 
