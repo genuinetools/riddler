@@ -13,7 +13,7 @@ import (
 
 const (
 	// SpecVersion is the version of the opencontainers spec that will be created.
-	SpecVersion = "0.3.0"
+	SpecVersion = "1.0.0-rc3"
 
 	// DefaultApparmorProfile is docker engine's default apparmor profile for containers.
 	DefaultApparmorProfile = "docker-default"
