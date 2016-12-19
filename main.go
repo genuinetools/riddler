@@ -7,13 +7,13 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 
 	"golang.org/x/net/context"
 
 	"github.com/Sirupsen/logrus"
 	native "github.com/docker/docker/daemon/execdriver/native/template"
-	"github.com/docker/docker/pkg/platform"
 	"github.com/docker/engine-api/client"
 	"github.com/jessfraz/riddler/parse"
 	specs "github.com/opencontainers/specs/specs-go"
@@ -164,7 +164,7 @@ func main() {
 	}
 
 	t := native.New()
-	spec, err := parse.Config(c, platform.OSType, platform.Architecture, t.Capabilities, idroot, idlen)
+	spec, err := parse.Config(c, runtime.GOOS, runtime.GOARCH, t.Capabilities, idroot, idlen)
 	if err != nil {
 		logrus.Fatalf("Spec config conversion for %s failed: %v", arg, err)
 	}
