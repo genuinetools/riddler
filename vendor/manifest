@@ -49,15 +49,6 @@
 			"path": "/pkg/mount"
 		},
 		{
-			"importpath": "github.com/docker/docker/pkg/platform",
-			"repository": "https://github.com/docker/docker",
-			"vcs": "git",
-			"revision": "2b1b235acf9aa029218e1bd5cd97a369c500e4f5",
-			"branch": "HEAD",
-			"path": "/pkg/platform",
-			"notests": true
-		},
-		{
 			"importpath": "github.com/docker/docker/pkg/random",
 			"repository": "https://github.com/docker/docker",
 			"vcs": "",
