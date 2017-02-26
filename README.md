@@ -32,6 +32,20 @@ $ riddler --help
         print version and exit
 ```
 
+## Installation
+
+For seccomp and apparmor support you will need:
+
+- `sys/apparmor.h`
+- `seccomp.h`
+
+**OR** to compile without those run:
+
+```console
+$ make build BUILDTAGS=""
+```
+
+
 **example**
 
 ```console
