@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"strings"
 
-	containertypes "github.com/docker/engine-api/types/container"
+	"github.com/docker/docker/api/types/container"
 	"github.com/opencontainers/runc/libcontainer/configs"
 	"github.com/opencontainers/runc/libcontainer/devices"
 	"github.com/opencontainers/runc/libcontainer/label"
 	"github.com/opencontainers/runc/libcontainer/user"
-	"github.com/opencontainers/specs/specs-go"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
-func parseDevices(config *specs.Spec, hc *containertypes.HostConfig) error {
+func parseDevices(config *specs.Spec, hc *container.HostConfig) error {
 	if hc.Privileged {
 		hostDevices, err := devices.HostDevices()
 		if err != nil {
@@ -21,7 +21,7 @@ func parseDevices(config *specs.Spec, hc *containertypes.HostConfig) error {
 		}
 		for _, d := range hostDevices {
 			t := string(d.Type)
-			config.Linux.Devices = append(config.Linux.Devices, specs.Device{
+			config.Linux.Devices = append(config.Linux.Devices, specs.LinuxDevice{
 				Type:     t,
 				Path:     d.Path,
 				Major:    d.Major,
@@ -30,20 +30,20 @@ func parseDevices(config *specs.Spec, hc *containertypes.HostConfig) error {
 				UID:      &d.Uid,
 				GID:      &d.Gid,
 			})
-			config.Linux.Resources.Devices = append(config.Linux.Resources.Devices, specs.DeviceCgroup{
+			config.Linux.Resources.Devices = append(config.Linux.Resources.Devices, specs.LinuxDeviceCgroup{
 				Allow:  true,
-				Type:   &t,
+				Type:   t,
 				Major:  &d.Major,
 				Minor:  &d.Minor,
-				Access: &d.Permissions,
+				Access: d.Permissions,
 			})
 		}
 
 		return nil
 	}
 
-	var userSpecifiedDevices []specs.Device
-	var userSpecifiedDeviceCgroup []specs.DeviceCgroup
+	var userSpecifiedDevices []specs.LinuxDevice
+	var userSpecifiedDeviceCgroup []specs.LinuxDeviceCgroup
 	for _, deviceMapping := range hc.Devices {
 		if deviceMapping.PathInContainer == "/dev/tty" && !config.Process.Terminal {
 			continue
@@ -61,9 +61,9 @@ func parseDevices(config *specs.Spec, hc *containertypes.HostConfig) error {
 	return nil
 }
 
-func parseMappings(config *specs.Spec, hc *containertypes.HostConfig) error {
+func parseMappings(config *specs.Spec, hc *container.HostConfig) error {
 	for _, g := range hc.GroupAdd {
-		var newGidMap = []specs.IDMapping{}
+		var newGidMap = []specs.LinuxIDMapping{}
 		group, err := user.LookupGroup(g)
 		if err != nil {
 			return fmt.Errorf("looking up group %s failed: %v", g, err)
@@ -77,14 +77,14 @@ func parseMappings(config *specs.Spec, hc *containertypes.HostConfig) error {
 				gm.Size = gid - gm.ContainerID - 1
 
 				// add the gid maps for the additional groups
-				newGidMap = append(newGidMap, specs.IDMapping{
+				newGidMap = append(newGidMap, specs.LinuxIDMapping{
 					ContainerID: gid,
 					HostID:      gid,
 					Size:        1,
 				})
 
 				// add the other side of the split
-				newGidMap = append(newGidMap, specs.IDMapping{
+				newGidMap = append(newGidMap, specs.LinuxIDMapping{
 					ContainerID: gid + 1,
 					HostID:      gm.HostID + gid - 1,
 					Size:        size - gid - 1,
@@ -99,7 +99,7 @@ func parseMappings(config *specs.Spec, hc *containertypes.HostConfig) error {
 	return nil
 }
 
-func parseSecurityOpt(config *specs.Spec, hc *containertypes.HostConfig) error {
+func parseSecurityOpt(config *specs.Spec, hc *container.HostConfig) error {
 	var (
 		labelOpts []string
 		err       error
@@ -123,7 +123,7 @@ func parseSecurityOpt(config *specs.Spec, hc *containertypes.HostConfig) error {
 		case "seccomp":
 			customSeccompProfile = true
 			if con[1] != "unconfined" {
-				var seccomp specs.Seccomp
+				var seccomp specs.LinuxSeccomp
 				if err := json.Unmarshal([]byte(con[1]), &seccomp); err != nil {
 					return fmt.Errorf("parsing seccomp profile failed: %v", err)
 				}

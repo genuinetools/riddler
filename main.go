@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -10,13 +11,10 @@ import (
 	"runtime"
 	"strings"
 
-	"golang.org/x/net/context"
-
 	"github.com/Sirupsen/logrus"
-	native "github.com/docker/docker/daemon/execdriver/native/template"
-	"github.com/docker/engine-api/client"
+	"github.com/docker/docker/client"
 	"github.com/jessfraz/riddler/parse"
-	specs "github.com/opencontainers/specs/specs-go"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
 const (
@@ -151,10 +149,9 @@ func init() {
 }
 
 func main() {
-	defaultHeaders := map[string]string{"User-Agent": "engine-api-cli-1.0"}
-	cli, err := client.NewClient(dockerHost, "", nil, defaultHeaders)
+	cli, err := client.NewEnvClient()
 	if err != nil {
-		panic(err)
+		logrus.Fatal(err)
 	}
 
 	// get container info
@@ -163,14 +160,13 @@ func main() {
 		logrus.Fatalf("inspecting container (%s) failed: %v", arg, err)
 	}
 
-	t := native.New()
-	spec, err := parse.Config(c, runtime.GOOS, runtime.GOARCH, t.Capabilities, idroot, idlen)
+	spec, err := parse.Config(c, runtime.GOOS, runtime.GOARCH, idroot, idlen)
 	if err != nil {
 		logrus.Fatalf("Spec config conversion for %s failed: %v", arg, err)
 	}
 
 	// fill in hooks, if passed through command line
-	spec.Hooks = hooks
+	spec.Hooks = &hooks
 	if err := writeConfig(spec); err != nil {
 		logrus.Fatal(err)
 	}
