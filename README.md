@@ -7,6 +7,34 @@
 [opencontainers/specs](https://github.com/opencontainers/specs)
 /[opencontainers/runc](https://github.com/opencontainers/runc) generator.
 
+> **NOTE:** This project is no longer maintained. If you are using a version of
+> docker greater than 1.11 then you can just copy the config from
+> `/var/run/docker/libcontainerd` like so:
+
+```console
+$ docker ps -a
+CONTAINER ID    CREATED             STATUS              PORTS               NAMES
+d4da95779a3c    3 minutes ago       Up 3 minutes        80/tcp              modest_meitner
+
+$ sudo tree /var/run/docker/libcontainerd -L 1
+/var/run/docker/libcontainerd
+├── containerd
+├── d4da95779a3c287b28b421194f04374b6330e6ff10f5ca1a99d03828d84f1635
+├── docker-containerd.pid
+├── docker-containerd.sock
+└── event.ts
+
+$ sudo tree /var/run/docker/libcontainerd/d4da95779a3c.../
+/var/run/docker/libcontainerd/d4da95779a3c.../
+├── config.json
+├── init-stderr
+├── init-stdin
+└── init-stdout
+
+$ sudo file /var/run/docker/libcontainerd/d4da95779a3c.../config.json
+/var/run/docker/libcontainerd/d4da95779a3c.../config.json: ASCII text, with very long lines
+```
+
 ```console
 $ riddler --help
       _     _     _ _
