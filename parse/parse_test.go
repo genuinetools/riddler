@@ -4,15 +4,15 @@ import (
 	"reflect"
 	"testing"
 
-	containertypes "github.com/docker/engine-api/types/container"
+	"github.com/docker/docker/api/types/container"
 	"github.com/opencontainers/runc/libcontainer/user"
-	"github.com/opencontainers/specs/specs-go"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
 type mappings struct {
-	gidMap           []specs.IDMapping
+	gidMap           []specs.LinuxIDMapping
 	additionalGroups []string
-	expected         []specs.IDMapping
+	expected         []specs.LinuxIDMapping
 }
 
 func TestParseMappings(t *testing.T) {
@@ -30,7 +30,7 @@ func TestParseMappings(t *testing.T) {
 
 	tests := []mappings{
 		{
-			gidMap: []specs.IDMapping{
+			gidMap: []specs.LinuxIDMapping{
 				{
 					ContainerID: 0,
 					HostID:      87645,
@@ -38,7 +38,7 @@ func TestParseMappings(t *testing.T) {
 				},
 			},
 			additionalGroups: []string{"audio"},
-			expected: []specs.IDMapping{
+			expected: []specs.LinuxIDMapping{
 				{
 					ContainerID: groupIDs["audio"],
 					HostID:      groupIDs["audio"],
@@ -57,7 +57,7 @@ func TestParseMappings(t *testing.T) {
 			},
 		},
 		{
-			gidMap: []specs.IDMapping{
+			gidMap: []specs.LinuxIDMapping{
 				{
 					ContainerID: 0,
 					HostID:      87645,
@@ -65,7 +65,7 @@ func TestParseMappings(t *testing.T) {
 				},
 			},
 			additionalGroups: []string{"audio", "video"},
-			expected: []specs.IDMapping{
+			expected: []specs.LinuxIDMapping{
 				{
 					ContainerID: groupIDs["audio"],
 					HostID:      groupIDs["audio"],
@@ -98,11 +98,11 @@ func TestParseMappings(t *testing.T) {
 	for _, test := range tests {
 		// make config
 		config := &specs.Spec{
-			Linux: specs.Linux{
+			Linux: &specs.Linux{
 				GIDMappings: test.gidMap,
 			},
 		}
-		hostConfig := &containertypes.HostConfig{
+		hostConfig := &container.HostConfig{
 			GroupAdd: test.additionalGroups,
 		}
 
