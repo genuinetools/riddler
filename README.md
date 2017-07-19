@@ -7,9 +7,11 @@
 [opencontainers/specs](https://github.com/opencontainers/specs)
 /[opencontainers/runc](https://github.com/opencontainers/runc) generator.
 
-> **NOTE:** This project is no longer maintained. If you are using a version of
-> docker greater than 1.11 then you can just copy the config from
-> `/var/run/docker/libcontainerd` like so:
+## NOTE
+
+This project is no longer maintained. If you are using a version of
+docker greater than 1.11 then you can just copy the config from
+`/var/run/docker/libcontainerd` like so:
 
 ```console
 $ docker ps -a
@@ -34,6 +36,8 @@ $ sudo tree /var/run/docker/libcontainerd/d4da95779a3c.../
 $ sudo file /var/run/docker/libcontainerd/d4da95779a3c.../config.json
 /var/run/docker/libcontainerd/d4da95779a3c.../config.json: ASCII text, with very long lines
 ```
+
+## Usage
 
 ```console
 $ riddler --help
