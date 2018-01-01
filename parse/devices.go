@@ -68,6 +68,10 @@ func getDevicesFromPath(deviceMapping containertypes.DeviceMapping) (devs []spec
 
 			// mount the internal devices recursively
 			filepath.Walk(deviceMapping.PathOnHost, func(dpath string, f os.FileInfo, e error) error {
+				if e != nil {
+					// If we already got an error, ignore the device
+					return nil
+				}
 				childDevice, childDeviceCgroup, e := deviceFromPath(dpath, deviceMapping.CgroupPermissions)
 				if e != nil {
 					// ignore the device

@@ -357,13 +357,5 @@ func Config(c types.ContainerJSON, osType, architecture string, capabilities []s
 		return nil, err
 	}
 
-	// set privileged
-	if c.HostConfig.Privileged {
-		if !c.HostConfig.ReadonlyRootfs {
-			// clear readonly for cgroup
-			//	config.Mounts["cgroup"] = DefaultMountpoints["cgroup"]
-		}
-	}
-
 	return config, nil
 }
