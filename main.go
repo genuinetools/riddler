@@ -134,7 +134,7 @@ func init() {
 	}
 
 	if arg == "version" {
-		fmt.Printf("%s", VERSION)
+		fmt.Printf("riddler version %s, build %s", version.VERSION, version.GITCOMMIT)
 		os.Exit(0)
 	}
 
