@@ -24,7 +24,7 @@ GO_LDFLAGS=-ldflags "-w $(CTIMEVAR)"
 GO_LDFLAGS_STATIC=-ldflags "-w $(CTIMEVAR) -extldflags -static"
 
 # List the GOOS and GOARCH to build
-GOOSARCHES = darwin/amd64 darwin/386 freebsd/amd64 freebsd/386 linux/arm linux/arm64 linux/amd64 linux/386 solaris/amd64 windows/amd64 windows/386
+GOOSARCHES = linux/amd64
 
 all: clean build fmt lint test staticcheck vet install ## Runs a clean, build, fmt, lint, test, staticcheck, vet and install
 
@@ -38,8 +38,8 @@ $(NAME): *.go VERSION
 .PHONY: static
 static: ## Builds a static executable
 	@echo "+ $@"
-	CGO_ENABLED=0 go build \
-				-tags "$(BUILDTAGS) static_build" \
+	CGO_ENABLED=1 go build \
+				-tags "$(BUILDTAGS) cgo static_build" \
 				${GO_LDFLAGS_STATIC} -o $(NAME) .
 
 .PHONY: fmt
@@ -74,9 +74,9 @@ install: ## Installs the executable or package
 
 define buildpretty
 mkdir -p $(BUILDDIR)/$(1)/$(2);
-GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 go build \
+GOOS=$(1) GOARCH=$(2) CGO_ENABLED=1 go build \
 	 -o $(BUILDDIR)/$(1)/$(2)/$(NAME) \
-	 -a -tags "$(BUILDTAGS) static_build netgo" \
+	 -a -tags "$(BUILDTAGS) cgo static_build netgo" \
 	 -installsuffix netgo ${GO_LDFLAGS_STATIC} .;
 md5sum $(BUILDDIR)/$(1)/$(2)/$(NAME) > $(BUILDDIR)/$(1)/$(2)/$(NAME).md5;
 sha256sum $(BUILDDIR)/$(1)/$(2)/$(NAME) > $(BUILDDIR)/$(1)/$(2)/$(NAME).sha256;
@@ -88,9 +88,9 @@ cross: *.go VERSION ## Builds the cross-compiled binaries, creating a clean dire
 	$(foreach GOOSARCH,$(GOOSARCHES), $(call buildpretty,$(subst /,,$(dir $(GOOSARCH))),$(notdir $(GOOSARCH))))
 
 define buildrelease
-GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 go build \
+GOOS=$(1) GOARCH=$(2) CGO_ENABLED=1 go build \
 	 -o $(BUILDDIR)/$(NAME)-$(1)-$(2) \
-	 -a -tags "$(BUILDTAGS) static_build netgo" \
+	 -a -tags "$(BUILDTAGS) cgo static_build netgo" \
 	 -installsuffix netgo ${GO_LDFLAGS_STATIC} .;
 md5sum $(BUILDDIR)/$(NAME)-$(1)-$(2) > $(BUILDDIR)/$(NAME)-$(1)-$(2).md5;
 sha256sum $(BUILDDIR)/$(NAME)-$(1)-$(2) > $(BUILDDIR)/$(NAME)-$(1)-$(2).sha256;
