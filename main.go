@@ -16,6 +16,7 @@ import (
 	native "github.com/docker/docker/daemon/execdriver/native/template"
 	"github.com/docker/engine-api/client"
 	"github.com/jessfraz/riddler/parse"
+	"github.com/jessfraz/riddler/version"
 	specs "github.com/opencontainers/specs/specs-go"
 )
 
@@ -26,13 +27,12 @@ const (
 | '__| |/ _` + "`" + ` |/ _` + "`" + ` | |/ _ \ '__|
 | |  | | (_| | (_| | |  __/ |
 |_|  |_|\__,_|\__,_|_|\___|_|
+
  docker inspect to opencontainers runc spec generator.
  Version: %s
+ Build: %s
 
 `
-	// VERSION is the binary version.
-	VERSION = "v0.1.0"
-
 	specConfig = "config.json"
 )
 
@@ -46,8 +46,8 @@ var (
 	idroot     uint32
 	idlen      uint32
 
-	debug   bool
-	version bool
+	debug bool
+	vrsn  bool
 )
 
 // stringSlice is a slice of strings
@@ -105,12 +105,12 @@ func init() {
 	flag.BoolVar(&force, "force", false, "force overwrite existing files")
 	flag.BoolVar(&force, "f", false, "force overwrite existing files")
 
-	flag.BoolVar(&version, "version", false, "print version and exit")
-	flag.BoolVar(&version, "v", false, "print version and exit (shorthand)")
+	flag.BoolVar(&vrsn, "version", false, "print version and exit")
+	flag.BoolVar(&vrsn, "v", false, "print version and exit (shorthand)")
 	flag.BoolVar(&debug, "d", false, "run in debug mode")
 
 	flag.Usage = func() {
-		fmt.Fprint(os.Stderr, fmt.Sprintf(BANNER, VERSION))
+		fmt.Fprint(os.Stderr, fmt.Sprintf(BANNER, version.VERSION, version.GITCOMMIT))
 		flag.PrintDefaults()
 	}
 
@@ -118,8 +118,8 @@ func init() {
 	idroot = uint32(idrootVar)
 	idlen = uint32(idlenVar)
 
-	if version {
-		fmt.Printf("%s\n", VERSION)
+	if vrsn {
+		fmt.Printf("riddler version %s, build %s", version.VERSION, version.GITCOMMIT)
 		os.Exit(0)
 	}
 

@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM golang:alpine as builder
 MAINTAINER Jessica Frazelle <jess@linux.com>
 
 ENV PATH /go/bin:/usr/local/go/bin:$PATH
@@ -11,17 +11,22 @@ COPY . /go/src/github.com/jessfraz/riddler
 
 RUN set -x \
 	&& apk add --no-cache --virtual .build-deps \
-		go \
 		git \
 		gcc \
 		libc-dev \
 		libgcc \
-		linux-headers \
+		make \
 	&& cd /go/src/github.com/jessfraz/riddler \
-	&& go build -o /usr/bin/riddler . \
+	&& make static \
+	&& mv riddler /usr/bin/riddler \
 	&& apk del .build-deps \
 	&& rm -rf /go \
 	&& echo "Build complete."
 
+FROM scratch
+
+COPY --from=builder /usr/bin/riddler /usr/bin/riddler
+COPY --from=builder /etc/ssl/certs/ /etc/ssl/certs
 
 ENTRYPOINT [ "riddler" ]
+CMD [ "--help" ]
