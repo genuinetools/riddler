@@ -37,6 +37,18 @@ $ sudo file /var/run/docker/libcontainerd/d4da95779a3c.../config.json
 /var/run/docker/libcontainerd/d4da95779a3c.../config.json: ASCII text, with very long lines
 ```
 
+## Installation
+
+#### Binaries
+
+- **linux** [amd64](https://github.com/jessfraz/riddler/releases/download/v0.1.0/riddler-linux-amd64)
+
+#### Via Go
+
+```bash
+$ go get github.com/jessfraz/riddler
+```
+
 ## Usage
 
 ```console
