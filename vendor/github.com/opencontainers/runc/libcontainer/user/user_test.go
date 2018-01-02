@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/opencontainers/runc/libcontainer/utils"
 )
 
 func TestUserParseLine(t *testing.T) {
@@ -101,12 +103,16 @@ func TestValidGetExecUser(t *testing.T) {
 	const passwdContent = `
 root:x:0:0:root user:/root:/bin/bash
 adm:x:42:43:adm:/var/adm:/bin/false
+111:x:222:333::/var/garbage
+odd:x:111:112::/home/odd:::::
 this is just some garbage data
 `
 	const groupContent = `
 root:x:0:root
 adm:x:43:
 grp:x:1234:root,adm
+444:x:555:111
+odd:x:444:
 this is just some garbage data
 `
 	defaultExecUser := ExecUser{
@@ -192,6 +198,26 @@ this is just some garbage data
 				Home:  defaultExecUser.Home,
 			},
 		},
+
+		// Regression tests for #695.
+		{
+			ref: "111",
+			expected: ExecUser{
+				Uid:   111,
+				Gid:   112,
+				Sgids: defaultExecUser.Sgids,
+				Home:  "/home/odd",
+			},
+		},
+		{
+			ref: "111:444",
+			expected: ExecUser{
+				Uid:   111,
+				Gid:   444,
+				Sgids: defaultExecUser.Sgids,
+				Home:  "/home/odd",
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -206,6 +232,7 @@ this is just some garbage data
 		}
 
 		if !reflect.DeepEqual(test.expected, *execUser) {
+			t.Logf("ref:      %v", test.ref)
 			t.Logf("got:      %#v", execUser)
 			t.Logf("expected: %#v", test.expected)
 			t.Fail()
@@ -218,6 +245,7 @@ func TestInvalidGetExecUser(t *testing.T) {
 	const passwdContent = `
 root:x:0:0:root user:/root:/bin/bash
 adm:x:42:43:adm:/var/adm:/bin/false
+-42:x:12:13:broken:/very/broken
 this is just some garbage data
 `
 	const groupContent = `
@@ -240,6 +268,8 @@ this is just some garbage data
 		"-1:0",
 		"0:-3",
 		"-5:-2",
+		"-42",
+		"-43",
 	}
 
 	for _, test := range tests {
@@ -354,6 +384,12 @@ this is just some garbage data
 }
 
 func TestGetAdditionalGroups(t *testing.T) {
+	type foo struct {
+		groups   []string
+		expected []int
+		hasError bool
+	}
+
 	const groupContent = `
 root:x:0:root
 adm:x:43:
@@ -361,11 +397,7 @@ grp:x:1234:root,adm
 adm:x:4343:root,adm-duplicate
 this is just some garbage data
 `
-	tests := []struct {
-		groups   []string
-		expected []int
-		hasError bool
-	}{
+	tests := []foo{
 		{
 			// empty group
 			groups:   []string{},
@@ -408,12 +440,15 @@ this is just some garbage data
 			expected: nil,
 			hasError: true,
 		},
-		{
+	}
+
+	if utils.GetIntSize() > 4 {
+		tests = append(tests, foo{
 			// groups with too large id
 			groups:   []string{strconv.Itoa(1 << 31)},
 			expected: nil,
 			hasError: true,
-		},
+		})
 	}
 
 	for _, test := range tests {

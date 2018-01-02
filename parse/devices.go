@@ -7,14 +7,15 @@ import (
 	"strings"
 	"syscall"
 
-	containertypes "github.com/docker/engine-api/types/container"
+	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/opencontainers/runc/libcontainer/configs"
 	"github.com/opencontainers/runc/libcontainer/devices"
-	"github.com/opencontainers/specs/specs-go"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"golang.org/x/sys/unix"
 )
 
-func mergeDevices(defaultDevices []*configs.Device, userDevices []specs.Device, userDeviceCgroup []specs.DeviceCgroup, hasTty bool) (devs []specs.Device, dc []specs.DeviceCgroup) {
-	paths := map[string]specs.Device{}
+func mergeDevices(defaultDevices []*configs.Device, userDevices []specs.LinuxDevice, userDeviceCgroup []specs.LinuxDeviceCgroup, hasTty bool) (devs []specs.LinuxDevice, dc []specs.LinuxDeviceCgroup) {
+	paths := map[string]specs.LinuxDevice{}
 	for _, d := range userDevices {
 		paths[d.Path] = d
 	}
@@ -25,7 +26,7 @@ func mergeDevices(defaultDevices []*configs.Device, userDevices []specs.Device, 
 		}
 		if _, defined := paths[d.Path]; !defined {
 			t := string(d.Type)
-			devs = append(devs, specs.Device{
+			devs = append(devs, specs.LinuxDevice{
 				Type:     t,
 				Path:     d.Path,
 				Major:    d.Major,
@@ -34,12 +35,12 @@ func mergeDevices(defaultDevices []*configs.Device, userDevices []specs.Device, 
 				UID:      &d.Uid,
 				GID:      &d.Gid,
 			})
-			dc = append(dc, specs.DeviceCgroup{
+			dc = append(dc, specs.LinuxDeviceCgroup{
 				Allow:  true,
-				Type:   &t,
+				Type:   t,
 				Major:  &d.Major,
 				Minor:  &d.Minor,
-				Access: &d.Permissions,
+				Access: d.Permissions,
 			})
 		}
 	}
@@ -51,7 +52,11 @@ func uint64ptr(i int64) *uint64 {
 	return &n
 }
 
-func getDevicesFromPath(deviceMapping containertypes.DeviceMapping) (devs []specs.Device, dc []specs.DeviceCgroup, err error) {
+func int64ptr(i int64) *int64 {
+	return &i
+}
+
+func getDevicesFromPath(deviceMapping containertypes.DeviceMapping) (devs []specs.LinuxDevice, dc []specs.LinuxDeviceCgroup, err error) {
 	device, deviceCgroup, err := deviceFromPath(deviceMapping.PathOnHost, deviceMapping.CgroupPermissions)
 	// if there was no error, return the device
 	if err == nil {
@@ -96,7 +101,7 @@ func getDevicesFromPath(deviceMapping containertypes.DeviceMapping) (devs []spec
 }
 
 // deviceFromPath takes the path to a device and it's cgroup_permissions(which cannot be easily queried) and looks up the information about a linux device.
-func deviceFromPath(path, permissions string) (*specs.Device, *specs.DeviceCgroup, error) {
+func deviceFromPath(path, permissions string) (*specs.LinuxDevice, *specs.LinuxDeviceCgroup, error) {
 	fileInfo, err := os.Lstat(path)
 	if err != nil {
 		return nil, nil, err
@@ -121,10 +126,10 @@ func deviceFromPath(path, permissions string) (*specs.Device, *specs.DeviceCgrou
 		return nil, nil, fmt.Errorf("cannot determine the device number for device %s", path)
 	}
 	devNumber := int(statt.Rdev)
-	major := devices.Major(devNumber)
-	minor := devices.Minor(devNumber)
+	major := int64(unix.Major(uint64(devNumber)))
+	minor := int64(unix.Minor(uint64(devNumber)))
 	t := string(devType)
-	dev := &specs.Device{
+	dev := &specs.LinuxDevice{
 		Type:     t,
 		Path:     path,
 		Major:    major,
@@ -133,12 +138,12 @@ func deviceFromPath(path, permissions string) (*specs.Device, *specs.DeviceCgrou
 		UID:      &statt.Uid,
 		GID:      &statt.Gid,
 	}
-	dc := &specs.DeviceCgroup{
+	dc := &specs.LinuxDeviceCgroup{
 		Allow:  true,
-		Type:   &t,
+		Type:   t,
 		Major:  &major,
 		Minor:  &minor,
-		Access: &permissions,
+		Access: permissions,
 	}
 	return dev, dc, nil
 }

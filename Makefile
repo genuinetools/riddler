@@ -6,7 +6,7 @@ NAME := riddler
 PKG := github.com/jessfraz/$(NAME)
 
 # Set any default go build tags
-BUILDTAGS :=
+BUILDTAGS := seccomp
 
 # Set the build dir, where built cross-compiled binaries will be output
 BUILDDIR := ${PREFIX}/cross

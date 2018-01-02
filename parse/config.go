@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
-	"github.com/docker/docker/daemon/execdriver"
-	"github.com/docker/engine-api/types"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/daemon/caps"
 	"github.com/opencontainers/runc/libcontainer/user"
-	"github.com/opencontainers/specs/specs-go"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -112,20 +112,16 @@ func Config(c types.ContainerJSON, osType, architecture string, capabilities []s
 	}
 	config = &specs.Spec{
 		Version: SpecVersion,
-		Platform: specs.Platform{
-			OS:   osType,
-			Arch: architecture,
-		},
-		Process: specs.Process{
+		Process: &specs.Process{
 			Terminal: c.Config.Tty,
 			User:     specs.User{
-			// TODO: user stuffs
+				// TODO: user stuffs
 			},
 			Args: append([]string{c.Path}, c.Args...),
 			Env:  c.Config.Env,
 			Cwd:  c.Config.WorkingDir,
 			// TODO: add parsing of Ulimits
-			Rlimits: []specs.Rlimit{
+			Rlimits: []specs.POSIXRlimit{
 				{
 					Type: "RLIMIT_NOFILE",
 					Hard: uint64(1024),
@@ -134,14 +130,15 @@ func Config(c types.ContainerJSON, osType, architecture string, capabilities []s
 			},
 			NoNewPrivileges: true,
 			ApparmorProfile: c.AppArmorProfile,
+			OOMScoreAdj:     &c.HostConfig.OomScoreAdj,
 		},
-		Root: specs.Root{
+		Root: &specs.Root{
 			Path:     "rootfs",
 			Readonly: c.HostConfig.ReadonlyRootfs,
 		},
 		Mounts: []specs.Mount{},
-		Linux: specs.Linux{
-			Namespaces: []specs.Namespace{
+		Linux: &specs.Linux{
+			Namespaces: []specs.LinuxNamespace{
 				{
 					Type: "ipc",
 				},
@@ -152,47 +149,46 @@ func Config(c types.ContainerJSON, osType, architecture string, capabilities []s
 					Type: "mount",
 				},
 			},
-			UIDMappings: []specs.IDMapping{
+			UIDMappings: []specs.LinuxIDMapping{
 				{
 					ContainerID: 0,
 					HostID:      idroot,
 					Size:        idlen,
 				},
 			},
-			GIDMappings: []specs.IDMapping{
+			GIDMappings: []specs.LinuxIDMapping{
 				{
 					ContainerID: 0,
 					HostID:      idroot,
 					Size:        idlen,
 				},
 			},
-			Resources: &specs.Resources{
-				Devices: []specs.DeviceCgroup{
+			Resources: &specs.LinuxResources{
+				Devices: []specs.LinuxDeviceCgroup{
 					{
 						Allow:  false,
-						Access: sPtr("rwm"),
+						Access: "rwm",
 					},
 				},
-				DisableOOMKiller: c.HostConfig.Resources.OomKillDisable,
-				OOMScoreAdj:      &c.HostConfig.OomScoreAdj,
-				Memory: &specs.Memory{
-					Limit:       uint64ptr(c.HostConfig.Resources.Memory),
-					Reservation: uint64ptr(c.HostConfig.Resources.MemoryReservation),
-					Swap:        uint64ptr(c.HostConfig.Resources.MemorySwap),
-					Swappiness:  uint64ptr(*c.HostConfig.Resources.MemorySwappiness),
-					Kernel:      uint64ptr(c.HostConfig.Resources.KernelMemory),
+				Memory: &specs.LinuxMemory{
+					Limit:            int64ptr(c.HostConfig.Resources.Memory),
+					Reservation:      int64ptr(c.HostConfig.Resources.MemoryReservation),
+					Swap:             int64ptr(c.HostConfig.Resources.MemorySwap),
+					Swappiness:       uint64ptr(*c.HostConfig.Resources.MemorySwappiness),
+					Kernel:           int64ptr(c.HostConfig.Resources.KernelMemory),
+					DisableOOMKiller: c.HostConfig.Resources.OomKillDisable,
 				},
-				CPU: &specs.CPU{
+				CPU: &specs.LinuxCPU{
 					Shares: uint64ptr(c.HostConfig.Resources.CPUShares),
-					Quota:  uint64ptr(c.HostConfig.Resources.CPUQuota),
+					Quota:  int64ptr(c.HostConfig.Resources.CPUQuota),
 					Period: uint64ptr(c.HostConfig.Resources.CPUPeriod),
-					Cpus:   &c.HostConfig.Resources.CpusetCpus,
-					Mems:   &c.HostConfig.Resources.CpusetMems,
+					Cpus:   c.HostConfig.Resources.CpusetCpus,
+					Mems:   c.HostConfig.Resources.CpusetMems,
 				},
-				Pids: &specs.Pids{
-					Limit: &c.HostConfig.Resources.PidsLimit,
+				Pids: &specs.LinuxPids{
+					Limit: c.HostConfig.Resources.PidsLimit,
 				},
-				BlockIO: &specs.BlockIO{
+				BlockIO: &specs.LinuxBlockIO{
 					Weight: &c.HostConfig.Resources.BlkioWeight,
 					// TODO: add parsing for Throttle/Weight Devices
 				},
@@ -237,22 +233,25 @@ func Config(c types.ContainerJSON, osType, architecture string, capabilities []s
 	// set privileged
 	if c.HostConfig.Privileged {
 		// allow all caps
-		capabilities = execdriver.GetAllCapabilities()
+		capabilities = caps.GetAllCapabilities()
 	}
 
 	// get the capabilities
-	config.Process.Capabilities, err = execdriver.TweakCapabilities(capabilities, c.HostConfig.CapAdd, c.HostConfig.CapDrop)
+	capabilities, err = caps.TweakCapabilities(capabilities, c.HostConfig.CapAdd, c.HostConfig.CapDrop)
 	if err != nil {
 		return nil, fmt.Errorf("setting capabilities failed: %v", err)
 	}
 
-	// add CAP_ prefix
-	// TODO: this is awful
-	for i, cap := range config.Process.Capabilities {
+	config.Process.Capabilities = &specs.LinuxCapabilities{}
+	for i, cap := range capabilities {
+		// Add the prefix and the cap
 		if !strings.HasPrefix(cap, "CAP_") {
-			config.Process.Capabilities[i] = fmt.Sprintf("CAP_%s", cap)
+			config.Process.Capabilities.Bounding[i] = fmt.Sprintf("CAP_%s", cap)
 		}
 	}
+	config.Process.Capabilities.Permitted = config.Process.Capabilities.Bounding
+	config.Process.Capabilities.Inheritable = config.Process.Capabilities.Bounding
+	config.Process.Capabilities.Effective = config.Process.Capabilities.Bounding
 
 	// if we have a container that needs a terminal but no env vars, then set
 	// default env vars for the terminal to function
@@ -276,23 +275,23 @@ func Config(c types.ContainerJSON, osType, architecture string, capabilities []s
 
 	// check namespaces
 	if !c.HostConfig.NetworkMode.IsHost() {
-		config.Linux.Namespaces = append(config.Linux.Namespaces, specs.Namespace{
+		config.Linux.Namespaces = append(config.Linux.Namespaces, specs.LinuxNamespace{
 			Type: "network",
 		})
 	}
 	if !c.HostConfig.PidMode.IsHost() {
-		config.Linux.Namespaces = append(config.Linux.Namespaces, specs.Namespace{
+		config.Linux.Namespaces = append(config.Linux.Namespaces, specs.LinuxNamespace{
 			Type: "pid",
 		})
 	}
 	if c.HostConfig.UsernsMode.Valid() && !c.HostConfig.NetworkMode.IsHost() && !c.HostConfig.PidMode.IsHost() && !c.HostConfig.Privileged {
-		config.Linux.Namespaces = append(config.Linux.Namespaces, specs.Namespace{
+		config.Linux.Namespaces = append(config.Linux.Namespaces, specs.LinuxNamespace{
 			Type: "user",
 		})
 	} else {
 		// reset uid and gid mappings
-		config.Linux.UIDMappings = []specs.IDMapping{}
-		config.Linux.GIDMappings = []specs.IDMapping{}
+		config.Linux.UIDMappings = []specs.LinuxIDMapping{}
+		config.Linux.GIDMappings = []specs.LinuxIDMapping{}
 	}
 
 	// get mounts

@@ -2,8 +2,10 @@
 
 package parse
 
-import "github.com/opencontainers/specs/specs-go"
+import (
+	specs "github.com/opencontainers/runtime-spec/specs-go"
+)
 
 var (
-	defaultSeccompProfile specs.Seccomp
+	defaultSeccompProfile specs.LinuxSeccomp
 )

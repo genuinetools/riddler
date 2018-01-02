@@ -6,10 +6,11 @@ import "testing"
 
 func TestStateStatus(t *testing.T) {
 	states := map[containerState]Status{
-		&stoppedState{}:  Destroyed,
+		&stoppedState{}:  Stopped,
 		&runningState{}:  Running,
 		&restoredState{}: Running,
 		&pausedState{}:   Paused,
+		&createdState{}:  Created,
 	}
 	for s, status := range states {
 		if s.status() != status {
@@ -75,5 +76,42 @@ func TestRestoredStateTransition(t *testing.T) {
 	}
 	if !isStateTransitionError(err) {
 		t.Fatal("expected stateTransitionError")
+	}
+}
+
+func TestRunningStateTransition(t *testing.T) {
+	s := &runningState{c: &linuxContainer{}}
+	valid := []containerState{
+		&stoppedState{},
+		&pausedState{},
+		&runningState{},
+	}
+	for _, v := range valid {
+		if err := s.transition(v); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	err := s.transition(&createdState{})
+	if err == nil {
+		t.Fatal("transition to created state should fail")
+	}
+	if !isStateTransitionError(err) {
+		t.Fatal("expected stateTransitionError")
+	}
+}
+
+func TestCreatedStateTransition(t *testing.T) {
+	s := &createdState{c: &linuxContainer{}}
+	valid := []containerState{
+		&stoppedState{},
+		&pausedState{},
+		&runningState{},
+		&createdState{},
+	}
+	for _, v := range valid {
+		if err := s.transition(v); err != nil {
+			t.Fatal(err)
+		}
 	}
 }

@@ -12,12 +12,11 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/Sirupsen/logrus"
-	native "github.com/docker/docker/daemon/execdriver/native/template"
-	"github.com/docker/engine-api/client"
+	"github.com/docker/docker/client"
 	"github.com/jessfraz/riddler/parse"
 	"github.com/jessfraz/riddler/version"
-	specs "github.com/opencontainers/specs/specs-go"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -163,14 +162,13 @@ func main() {
 		logrus.Fatalf("inspecting container (%s) failed: %v", arg, err)
 	}
 
-	t := native.New()
-	spec, err := parse.Config(c, runtime.GOOS, runtime.GOARCH, t.Capabilities, idroot, idlen)
+	spec, err := parse.Config(c, runtime.GOOS, runtime.GOARCH, defaultCapabilities(), idroot, idlen)
 	if err != nil {
 		logrus.Fatalf("Spec config conversion for %s failed: %v", arg, err)
 	}
 
 	// fill in hooks, if passed through command line
-	spec.Hooks = hooks
+	spec.Hooks = &hooks
 	if err := writeConfig(spec); err != nil {
 		logrus.Fatal(err)
 	}
@@ -220,4 +218,23 @@ func writeConfig(spec *specs.Spec) error {
 	}
 
 	return ioutil.WriteFile(specConfig, data, 0666)
+}
+
+func defaultCapabilities() []string {
+	return []string{
+		"CAP_CHOWN",
+		"CAP_DAC_OVERRIDE",
+		"CAP_FSETID",
+		"CAP_FOWNER",
+		"CAP_MKNOD",
+		"CAP_NET_RAW",
+		"CAP_SETGID",
+		"CAP_SETUID",
+		"CAP_SETFCAP",
+		"CAP_SETPCAP",
+		"CAP_NET_BIND_SERVICE",
+		"CAP_SYS_CHROOT",
+		"CAP_KILL",
+		"CAP_AUDIT_WRITE",
+	}
 }
