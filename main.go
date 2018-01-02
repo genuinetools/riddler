@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -9,8 +10,6 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"github.com/docker/docker/client"
 	"github.com/jessfraz/riddler/parse"
