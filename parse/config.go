@@ -114,12 +114,10 @@ func Config(c types.ContainerJSON, osType, architecture string, capabilities []s
 		Version: SpecVersion,
 		Process: &specs.Process{
 			Terminal: c.Config.Tty,
-			User:     specs.User{
-			// TODO: user stuffs
-			},
-			Args: append([]string{c.Path}, c.Args...),
-			Env:  c.Config.Env,
-			Cwd:  c.Config.WorkingDir,
+			User:     specs.User{},
+			Args:     append([]string{c.Path}, c.Args...),
+			Env:      c.Config.Env,
+			Cwd:      c.Config.WorkingDir,
 			// TODO: add parsing of Ulimits
 			Rlimits: []specs.POSIXRlimit{
 				{
