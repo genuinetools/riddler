@@ -41,7 +41,7 @@ $ sudo file /var/run/docker/libcontainerd/d4da95779a3c.../config.json
 
 #### Binaries
 
-- **linux** [amd64](https://github.com/jessfraz/riddler/releases/download/v0.2.0/riddler-linux-amd64)
+- **linux** [amd64](https://github.com/jessfraz/riddler/releases/download/v0.3.0/riddler-linux-amd64)
 
 #### Via Go
 
@@ -59,7 +59,7 @@ $ riddler --help
 | |  | | (_| | (_| | |  __/ |
 |_|  |_|\__,_|\__,_|_|\___|_|
  docker inspect to opencontainers runc spec generator.
- Version: v0.2.0
+ Version: v0.3.0
 
  -bundle string
         Path to the root of the bundle directory
