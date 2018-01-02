@@ -115,7 +115,7 @@ func Config(c types.ContainerJSON, osType, architecture string, capabilities []s
 		Process: &specs.Process{
 			Terminal: c.Config.Tty,
 			User:     specs.User{
-				// TODO: user stuffs
+			// TODO: user stuffs
 			},
 			Args: append([]string{c.Path}, c.Args...),
 			Env:  c.Config.Env,
