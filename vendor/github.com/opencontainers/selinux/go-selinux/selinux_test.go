@@ -24,7 +24,7 @@ func TestSetFileLabel(t *testing.T) {
 			t.Fatal(err)
 		}
 		if con != filelabel {
-			t.Fatal("FileLabel failed, returned %s expected %s", filelabel, con)
+			t.Fatalf("FileLabel failed, returned %s expected %s", filelabel, con)
 		}
 
 		os.Remove(tmp)
@@ -77,5 +77,28 @@ func TestSELinux(t *testing.T) {
 			t.Fatal(err)
 		}
 		t.Log(PidLabel(1))
+	}
+}
+
+func TestCanonicalizeContext(t *testing.T) {
+	if GetEnabled() {
+		con := "system_u:object_r:bin_t:s0:c1,c2,c3"
+		checkcon := "system_u:object_r:bin_t:s0:c1.c3"
+		newcon, err := CanonicalizeContext(con)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if newcon != checkcon {
+			t.Fatalf("CanonicalizeContext(%s) returned %s expected %s", con, newcon, checkcon)
+		}
+		con = "system_u:object_r:bin_t:s0:c5,c2"
+		checkcon = "system_u:object_r:bin_t:s0:c2,c5"
+		newcon, err = CanonicalizeContext(con)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if newcon != checkcon {
+			t.Fatalf("CanonicalizeContext(%s) returned %s expected %s", con, newcon, checkcon)
+		}
 	}
 }
