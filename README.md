@@ -1,6 +1,6 @@
 # riddler
 
-[![Travis CI](https://travis-ci.org/jessfraz/riddler.svg?branch=master)](https://travis-ci.org/jessfraz/riddler)
+[![Travis CI](https://travis-ci.org/genuinetools/riddler.svg?branch=master)](https://travis-ci.org/genuinetools/riddler)
 
 
 `docker inspect` to
@@ -41,12 +41,12 @@ $ sudo file /var/run/docker/libcontainerd/d4da95779a3c.../config.json
 
 #### Binaries
 
-- **linux** [amd64](https://github.com/jessfraz/riddler/releases/download/v0.6.0/riddler-linux-amd64)
+- **linux** [amd64](https://github.com/genuinetools/riddler/releases/download/v0.6.0/riddler-linux-amd64)
 
 #### Via Go
 
 ```bash
-$ go get github.com/jessfraz/riddler
+$ go get github.com/genuinetools/riddler
 ```
 
 ## Usage

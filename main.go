@@ -12,8 +12,8 @@ import (
 	"strings"
 
 	"github.com/docker/docker/client"
-	"github.com/jessfraz/riddler/parse"
-	"github.com/jessfraz/riddler/version"
+	"github.com/genuinetools/riddler/parse"
+	"github.com/genuinetools/riddler/version"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sirupsen/logrus"
 )
