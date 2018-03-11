@@ -155,5 +155,3 @@ func parseSecurityOpt(config *specs.Spec, hc *containertypes.HostConfig) error {
 	config.Process.SelinuxLabel, _, err = label.InitLabels(labelOpts)
 	return err
 }
-
-func sPtr(s string) *string { return &s }
