@@ -194,10 +194,10 @@ const (
 
 // LinuxIDMapping specifies UID/GID mappings
 type LinuxIDMapping struct {
-	// HostID is the starting UID/GID on the host to be mapped to 'ContainerID'
-	HostID uint32 `json:"hostID"`
 	// ContainerID is the starting UID/GID in the container
 	ContainerID uint32 `json:"containerID"`
+	// HostID is the starting UID/GID on the host to be mapped to 'ContainerID'
+	HostID uint32 `json:"hostID"`
 	// Size is the number of IDs to be mapped
 	Size uint32 `json:"size"`
 }
@@ -320,6 +320,14 @@ type LinuxNetwork struct {
 	Priorities []LinuxInterfacePriority `json:"priorities,omitempty"`
 }
 
+// LinuxRdma for Linux cgroup 'rdma' resource management (Linux 4.11)
+type LinuxRdma struct {
+	// Maximum number of HCA handles that can be opened. Default is "no limit".
+	HcaHandles *uint32 `json:"hcaHandles,omitempty"`
+	// Maximum number of HCA objects that can be created. Default is "no limit".
+	HcaObjects *uint32 `json:"hcaObjects,omitempty"`
+}
+
 // LinuxResources has container runtime resource constraints
 type LinuxResources struct {
 	// Devices configures the device whitelist.
@@ -336,6 +344,10 @@ type LinuxResources struct {
 	HugepageLimits []LinuxHugepageLimit `json:"hugepageLimits,omitempty"`
 	// Network restriction configuration
 	Network *LinuxNetwork `json:"network,omitempty"`
+	// Rdma resource restriction configuration.
+	// Limits are a set of key value pairs that define RDMA resource limits,
+	// where the key is device name and value is resource limits.
+	Rdma map[string]LinuxRdma `json:"rdma,omitempty"`
 }
 
 // LinuxDevice represents the mknod information for a Linux special device file

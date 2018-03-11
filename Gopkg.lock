@@ -14,7 +14,7 @@
     "digestset",
     "reference"
   ]
-  revision = "6664ec703991875e14419ff4960921cce7678bab"
+  revision = "6fca8d6e6713acbdf3f9ca40cf6370fc5ee5ee53"
 
 [[projects]]
   branch = "master"
@@ -39,7 +39,7 @@
     "client",
     "daemon/caps"
   ]
-  revision = "c5e7537d2305c1855f95422f08ca844d05a17aa2"
+  revision = "a575b0b1384b2ba89b79cbd7e770fbeb616758b3"
 
 [[projects]]
   branch = "master"
@@ -49,7 +49,7 @@
     "sockets",
     "tlsconfig"
   ]
-  revision = "7beb39f0b969b075d1325fecb092faf27fd357b6"
+  revision = "7395e3f8aa162843a74ed6d48e79627d9792ac55"
 
 [[projects]]
   branch = "master"
@@ -86,13 +86,13 @@
     "libcontainer/devices",
     "libcontainer/user"
   ]
-  revision = "a618ab5a0186905949ee463dbb762c3d23e12a80"
+  revision = "69663f0bd4b60df09991c08812a60108003fa340"
 
 [[projects]]
   branch = "master"
   name = "github.com/opencontainers/runtime-spec"
   packages = ["specs-go"]
-  revision = "520c6348d6f3b5cfc1fb3bc13deb4df10c902215"
+  revision = "6be516e2237a6dd377408e455ac8b41faf48bdf6"
 
 [[projects]]
   branch = "master"
@@ -119,13 +119,13 @@
   branch = "master"
   name = "github.com/syndtr/gocapability"
   packages = ["capability"]
-  revision = "db04d3cc01c8b54962a58ec7e491717d06cfcc16"
+  revision = "33e07d32887e1e06b7c025f27ce52f62c7990bc0"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "650f4a345ab4e5b245a3034b110ebc7299e68186"
+  revision = "c7dcf104e3a7a1417abc0230cb0d5240d764159d"
 
 [[projects]]
   branch = "master"
@@ -135,7 +135,7 @@
     "context/ctxhttp",
     "proxy"
   ]
-  revision = "136a25c244d3019482a795d728110278d6ba09a4"
+  revision = "d0aafc73d5cdc42264b0af071c261abac580695e"
 
 [[projects]]
   branch = "master"
@@ -144,7 +144,7 @@
     "unix",
     "windows"
   ]
-  revision = "37707fdb30a5b38865cfb95e5aab41707daec7fd"
+  revision = "7dca6fe1f43775aa6d1334576870ff63f978f539"
 
 [solve-meta]
   analyzer-name = "dep"

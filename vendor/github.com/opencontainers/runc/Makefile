@@ -1,4 +1,4 @@
-.PHONY: all shell dbuild man \
+.PHONY: all shell dbuild man release \
 	    localtest localunittest localintegration \
 	    test unittest integration
 
@@ -82,7 +82,7 @@ rootlessintegration: runcimage
 localrootlessintegration: all
 	tests/rootless.sh
 
-shell: all
+shell: runcimage
 	docker run -e TESTFLAGS -ti --privileged --rm -v $(CURDIR):/go/src/$(PROJECT) $(RUNC_IMAGE) bash
 
 install:
