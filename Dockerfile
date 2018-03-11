@@ -7,7 +7,7 @@ ENV GOPATH /go
 RUN	apk add --no-cache \
 	ca-certificates
 
-COPY . /go/src/github.com/jessfraz/riddler
+COPY . /go/src/github.com/genuinetools/riddler
 
 RUN set -x \
 	&& apk add --no-cache --virtual .build-deps \
@@ -17,7 +17,7 @@ RUN set -x \
 		libgcc \
 		linux-headers \
 		make \
-	&& cd /go/src/github.com/jessfraz/riddler \
+	&& cd /go/src/github.com/genuinetools/riddler \
 	&& make static \
 	&& mv riddler /usr/bin/riddler \
 	&& apk del .build-deps \

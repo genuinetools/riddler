@@ -44,3 +44,7 @@ Icon
 
 riddler
 cross/
+
+# Go coverage results
+coverage.txt
+profile.out
