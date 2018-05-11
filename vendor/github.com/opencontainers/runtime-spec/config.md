@@ -349,6 +349,8 @@ For Windows based systems the user structure has the following fields:
     This MUST be set if the target platform of this spec is `windows`.
 * **`solaris`** (object, OPTIONAL) [Solaris-specific configuration](config-solaris.md).
     This MAY be set if the target platform of this spec is `solaris`.
+* **`vm`** (object, OPTIONAL) [Virtual-machine-specific configuration](config-vm.md).
+    This MAY be set if the target platform and architecture of this spec support hardware virtualization.
 
 ### Example (Linux)
 
@@ -373,6 +375,7 @@ For POSIX platforms, the configuration structure supports `hooks` for configurin
         Entries in the array contain the following properties:
         * **`path`** (string, REQUIRED) with similar semantics to [IEEE Std 1003.1-2008 `execv`'s *path*][ieee-1003.1-2008-functions-exec].
             This specification extends the IEEE standard in that **`path`** MUST be absolute.
+            Runtimes MUST resolve this value in the [runtime namespace](glossary.md#runtime-namespace).
         * **`args`** (array of strings, OPTIONAL) with the same semantics as [IEEE Std 1003.1-2008 `execv`'s *argv*][ieee-1003.1-2008-functions-exec].
         * **`env`** (array of strings, OPTIONAL) with the same semantics as [IEEE Std 1003.1-2008's `environ`][ieee-1003.1-2008-xbd-c8.1].
         * **`timeout`** (int, OPTIONAL) is the number of seconds before aborting the hook.
@@ -384,6 +387,7 @@ For POSIX platforms, the configuration structure supports `hooks` for configurin
 
 Hooks allow users to specify programs to run before or after various lifecycle events.
 Hooks MUST be called in the listed order.
+Hooks MUST be executed in the [runtime namespace](glossary.md#runtime-namespace).
 The [state](runtime.md#state) of the container MUST be passed to hooks over stdin so that they may do work appropriate to the current state of the container.
 
 ### <a name="configHooksPrestart" />Prestart
@@ -851,8 +855,8 @@ Here is a full example `config.json` for reference.
 [capabilities.7]: http://man7.org/linux/man-pages/man7/capabilities.7.html
 [mount.2]: http://man7.org/linux/man-pages/man2/mount.2.html
 [mount.8]: http://man7.org/linux/man-pages/man8/mount.8.html
-[mount.8-filesystem-independent]: http://man7.org/linux/man-pages/man8/mount.8.html#FILESYSTEM-INDEPENDENT_MOUNT%20OPTIONS
-[mount.8-filesystem-specific]: http://man7.org/linux/man-pages/man8/mount.8.html#FILESYSTEM-SPECIFIC_MOUNT%20OPTIONS
+[mount.8-filesystem-independent]: http://man7.org/linux/man-pages/man8/mount.8.html#FILESYSTEM-INDEPENDENT_MOUNT_OPTIONS
+[mount.8-filesystem-specific]: http://man7.org/linux/man-pages/man8/mount.8.html#FILESYSTEM-SPECIFIC_MOUNT_OPTIONS
 [getrlimit.2]: http://man7.org/linux/man-pages/man2/getrlimit.2.html
 [getrlimit.3]: http://pubs.opengroup.org/onlinepubs/9699919799/functions/getrlimit.html
 [stdin.3]: http://man7.org/linux/man-pages/man3/stdin.3.html

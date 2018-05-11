@@ -4,10 +4,12 @@ package selinux
 
 import (
 	"bufio"
+	"bytes"
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -26,10 +28,12 @@ const (
 	Disabled         = -1
 	selinuxDir       = "/etc/selinux/"
 	selinuxConfig    = selinuxDir + "config"
+	selinuxfsMount   = "/sys/fs/selinux"
 	selinuxTypeTag   = "SELINUXTYPE"
 	selinuxTag       = "SELINUX"
 	xattrNameSelinux = "security.selinux"
 	stRdOnly         = 0x01
+	selinuxfsMagic   = 0xf97cff8c
 )
 
 type selinuxState struct {
@@ -90,6 +94,83 @@ func (s *selinuxState) setSELinuxfs(selinuxfs string) string {
 	return s.selinuxfs
 }
 
+func verifySELinuxfsMount(mnt string) bool {
+	var buf syscall.Statfs_t
+	for {
+		err := syscall.Statfs(mnt, &buf)
+		if err == nil {
+			break
+		}
+		if err == syscall.EAGAIN {
+			continue
+		}
+		return false
+	}
+	if buf.Type != selinuxfsMagic {
+		return false
+	}
+	if (buf.Flags & stRdOnly) != 0 {
+		return false
+	}
+
+	return true
+}
+
+func findSELinuxfs() string {
+	// fast path: check the default mount first
+	if verifySELinuxfsMount(selinuxfsMount) {
+		return selinuxfsMount
+	}
+
+	// check if selinuxfs is available before going the slow path
+	fs, err := ioutil.ReadFile("/proc/filesystems")
+	if err != nil {
+		return ""
+	}
+	if !bytes.Contains(fs, []byte("\tselinuxfs\n")) {
+		return ""
+	}
+
+	// slow path: try to find among the mounts
+	f, err := os.Open("/proc/self/mountinfo")
+	if err != nil {
+		return ""
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for {
+		mnt := findSELinuxfsMount(scanner)
+		if mnt == "" { // error or not found
+			return ""
+		}
+		if verifySELinuxfsMount(mnt) {
+			return mnt
+		}
+	}
+}
+
+// findSELinuxfsMount returns a next selinuxfs mount point found,
+// if there is one, or an empty string in case of EOF or error.
+func findSELinuxfsMount(s *bufio.Scanner) string {
+	for s.Scan() {
+		txt := s.Text()
+		// The first field after - is fs type.
+		// Safe as spaces in mountpoints are encoded as \040
+		if !strings.Contains(txt, " - selinuxfs ") {
+			continue
+		}
+		const mPos = 5 // mount point is 5th field
+		fields := strings.SplitN(txt, " ", mPos+1)
+		if len(fields) < mPos+1 {
+			continue
+		}
+		return fields[mPos-1]
+	}
+
+	return ""
+}
+
 func (s *selinuxState) getSELinuxfs() string {
 	s.Lock()
 	selinuxfs := s.selinuxfs
@@ -99,40 +180,7 @@ func (s *selinuxState) getSELinuxfs() string {
 		return selinuxfs
 	}
 
-	selinuxfs = ""
-	f, err := os.Open("/proc/self/mountinfo")
-	if err != nil {
-		return selinuxfs
-	}
-	defer f.Close()
-
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		txt := scanner.Text()
-		// Safe as mountinfo encodes mountpoints with spaces as \040.
-		sepIdx := strings.Index(txt, " - ")
-		if sepIdx == -1 {
-			continue
-		}
-		if !strings.Contains(txt[sepIdx:], "selinuxfs") {
-			continue
-		}
-		fields := strings.Split(txt, " ")
-		if len(fields) < 5 {
-			continue
-		}
-		selinuxfs = fields[4]
-		break
-	}
-
-	if selinuxfs != "" {
-		var buf syscall.Statfs_t
-		syscall.Statfs(selinuxfs, &buf)
-		if (buf.Flags & stRdOnly) == 1 {
-			selinuxfs = ""
-		}
-	}
-	return s.setSELinuxfs(selinuxfs)
+	return s.setSELinuxfs(findSELinuxfs())
 }
 
 // getSelinuxMountPoint returns the path to the mountpoint of an selinuxfs
@@ -310,7 +358,10 @@ func SetExecLabel(label string) error {
 
 // Get returns the Context as a string
 func (c Context) Get() string {
-	return fmt.Sprintf("%s:%s:%s:%s", c["user"], c["role"], c["type"], c["level"])
+	if c["level"] != "" {
+		return fmt.Sprintf("%s:%s:%s:%s", c["user"], c["role"], c["type"], c["level"])
+	}
+	return fmt.Sprintf("%s:%s:%s", c["user"], c["role"], c["type"])
 }
 
 // NewContext creates a new Context struct from the specified label
@@ -322,7 +373,9 @@ func NewContext(label string) Context {
 		c["user"] = con[0]
 		c["role"] = con[1]
 		c["type"] = con[2]
-		c["level"] = con[3]
+		if len(con) > 3 {
+			c["level"] = con[3]
+		}
 	}
 	return c
 }
@@ -331,7 +384,9 @@ func NewContext(label string) Context {
 func ReserveLabel(label string) {
 	if len(label) != 0 {
 		con := strings.SplitN(label, ":", 4)
-		mcsAdd(con[3])
+		if len(con) > 3 {
+			mcsAdd(con[3])
+		}
 	}
 }
 
@@ -379,6 +434,9 @@ func DefaultEnforceMode() int {
 }
 
 func mcsAdd(mcs string) error {
+	if mcs == "" {
+		return nil
+	}
 	state.Lock()
 	defer state.Unlock()
 	if state.mcsList[mcs] {
@@ -389,6 +447,9 @@ func mcsAdd(mcs string) error {
 }
 
 func mcsDelete(mcs string) {
+	if mcs == "" {
+		return
+	}
 	state.Lock()
 	defer state.Unlock()
 	state.mcsList[mcs] = false
@@ -449,7 +510,9 @@ Allowing it to be used by another process.
 func ReleaseLabel(label string) {
 	if len(label) != 0 {
 		con := strings.SplitN(label, ":", 4)
-		mcsDelete(con[3])
+		if len(con) > 3 {
+			mcsDelete(con[3])
+		}
 	}
 }
 
@@ -522,13 +585,15 @@ func ContainerLabels() (processLabel string, fileLabel string) {
 		roFileLabel = fileLabel
 	}
 exit:
-	mcs := uniqMcs(1024)
 	scon := NewContext(processLabel)
-	scon["level"] = mcs
-	processLabel = scon.Get()
-	scon = NewContext(fileLabel)
-	scon["level"] = mcs
-	fileLabel = scon.Get()
+	if scon["level"] != "" {
+		mcs := uniqMcs(1024)
+		scon["level"] = mcs
+		processLabel = scon.Get()
+		scon = NewContext(fileLabel)
+		scon["level"] = mcs
+		fileLabel = scon.Get()
+	}
 	return processLabel, fileLabel
 }
 
@@ -601,14 +666,19 @@ func DupSecOpt(src string) []string {
 	con := NewContext(src)
 	if con["user"] == "" ||
 		con["role"] == "" ||
-		con["type"] == "" ||
-		con["level"] == "" {
+		con["type"] == "" {
 		return nil
 	}
-	return []string{"user:" + con["user"],
+	dup := []string{"user:" + con["user"],
 		"role:" + con["role"],
 		"type:" + con["type"],
-		"level:" + con["level"]}
+	}
+
+	if con["level"] != "" {
+		dup = append(dup, "level:"+con["level"])
+	}
+
+	return dup
 }
 
 // DisableSecOpt returns a security opt that can be used to disabling SELinux

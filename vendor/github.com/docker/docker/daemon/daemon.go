@@ -179,11 +179,6 @@ func (daemon *Daemon) restore() error {
 			delete(containers, id)
 			continue
 		}
-		// verify that all volumes valid and have been migrated from the pre-1.7 layout
-		if err := daemon.verifyVolumesInfo(c); err != nil {
-			// don't skip the container due to error
-			logrus.Errorf("Failed to verify volumes for container '%s': %v", c.ID, err)
-		}
 		if err := daemon.Register(c); err != nil {
 			logrus.Errorf("Failed to register container %s: %s", c.ID, err)
 			delete(containers, id)
@@ -325,7 +320,7 @@ func (daemon *Daemon) restore() error {
 			// not initialized yet. We will start
 			// it after the cluster is
 			// initialized.
-			if daemon.configStore.AutoRestart && c.ShouldRestart() && !c.NetworkSettings.HasSwarmEndpoint {
+			if daemon.configStore.AutoRestart && c.ShouldRestart() && !c.NetworkSettings.HasSwarmEndpoint && c.HasBeenStartedBefore {
 				mapLock.Lock()
 				restartContainers[c] = make(chan struct{})
 				mapLock.Unlock()
@@ -455,7 +450,7 @@ func (daemon *Daemon) RestartSwarmContainers() {
 			// Autostart all the containers which has a
 			// swarm endpoint now that the cluster is
 			// initialized.
-			if daemon.configStore.AutoRestart && c.ShouldRestart() && c.NetworkSettings.HasSwarmEndpoint {
+			if daemon.configStore.AutoRestart && c.ShouldRestart() && c.NetworkSettings.HasSwarmEndpoint && c.HasBeenStartedBefore {
 				group.Add(1)
 				go func(c *container.Container) {
 					defer group.Done()
@@ -1150,17 +1145,15 @@ func setDefaultMtu(conf *config.Config) {
 }
 
 func (daemon *Daemon) configureVolumes(rootIDs idtools.IDPair) (*store.VolumeStore, error) {
-	volumesDriver, err := local.New(daemon.configStore.Root, rootIDs)
+	volumeDriver, err := local.New(daemon.configStore.Root, rootIDs)
 	if err != nil {
 		return nil, err
 	}
-
-	volumedrivers.RegisterPluginGetter(daemon.PluginStore)
-
-	if !volumedrivers.Register(volumesDriver, volumesDriver.Name()) {
+	drivers := volumedrivers.NewStore(daemon.PluginStore)
+	if !drivers.Register(volumeDriver, volumeDriver.Name()) {
 		return nil, errors.New("local volume driver could not be registered")
 	}
-	return store.New(daemon.configStore.Root)
+	return store.New(daemon.configStore.Root, drivers)
 }
 
 // IsShuttingDown tells whether the daemon is shutting down or not
@@ -1229,6 +1222,10 @@ func (daemon *Daemon) networkOptions(dconfig *config.Config, pg plugingetter.Plu
 
 	options = append(options, nwconfig.OptionLabels(dconfig.Labels))
 	options = append(options, driverOptions(dconfig)...)
+
+	if len(dconfig.NetworkConfig.DefaultAddressPools.Value()) > 0 {
+		options = append(options, nwconfig.OptionDefaultAddressPoolConfig(dconfig.NetworkConfig.DefaultAddressPools.Value()))
+	}
 
 	if daemon.configStore != nil && daemon.configStore.LiveRestoreEnabled && len(activeSandboxes) != 0 {
 		options = append(options, nwconfig.OptionActiveSandboxes(activeSandboxes))
