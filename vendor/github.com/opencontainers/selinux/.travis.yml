@@ -7,7 +7,7 @@ go:
 
 env:
   global:
-    - BUILDTAGS="selinux linux"
+    - BUILDTAGS="selinux"
 
 before_install:
   - go get -u github.com/golang/lint/golint
@@ -15,4 +15,5 @@ before_install:
 
 script:
   - git-validation -run DCO,short-subject -v -range ${TRAVIS_COMMIT_RANGE}
-  - make BUILDTAGS="${BUILDTAGS}" lint test
+  - GOOS=linux make BUILDTAGS="${BUILDTAGS}" lint test
+  - make BUILDTAGS="" lint test

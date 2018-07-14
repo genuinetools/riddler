@@ -2,22 +2,27 @@
 
 
 [[projects]]
+  digest = "1:6542e2b66fda16e5287aaf563e799aacd5fbe48be9abdec576fa6e945b58a775"
   name = "github.com/Microsoft/go-winio"
   packages = ["."]
-  revision = "7da180ee92d8bd8bb8c37fc560e673e6557c392f"
-  version = "v0.4.7"
+  pruneopts = ""
+  revision = "67921128fb397dd80339870d2193d6b1e6856fd4"
+  version = "v0.4.8"
 
 [[projects]]
   branch = "master"
+  digest = "1:cf47a53f2ab604357c0dfa8bbc2adf40c6e6668d526f957da38703dd06732823"
   name = "github.com/docker/distribution"
   packages = [
     "digestset",
-    "reference"
+    "reference",
   ]
-  revision = "83389a148052d74ac602f5f1d62f86ff2f3c4aa5"
+  pruneopts = ""
+  revision = "749f6afb4572201e3c37325d0ffedb6f32be8950"
 
 [[projects]]
   branch = "master"
+  digest = "1:a531d4306004d18555634584ed10d996fe4f83c890d2af837af2217ab8a037e6"
   name = "github.com/docker/docker"
   packages = [
     "api",
@@ -37,119 +42,161 @@
     "api/types/versions",
     "api/types/volume",
     "client",
-    "daemon/caps"
+    "daemon/caps",
+    "errdefs",
   ]
-  revision = "38162e96552bd30e510e355cd44d801f53bac5ae"
+  pruneopts = ""
+  revision = "d080de7074a05a1534bf7e91d000a311885fa221"
 
 [[projects]]
   branch = "master"
+  digest = "1:93e497960c908d77fe29e28d4b5c84adf751f7d7cf842c67683925fac2b4f11f"
   name = "github.com/docker/go-connections"
   packages = [
     "nat",
     "sockets",
-    "tlsconfig"
+    "tlsconfig",
   ]
+  pruneopts = ""
   revision = "7395e3f8aa162843a74ed6d48e79627d9792ac55"
 
 [[projects]]
+  branch = "master"
+  digest = "1:582d54fcb7233da8dde1dfd2210a5b9675d0685f84246a8d317b07d680c18b1b"
   name = "github.com/docker/go-units"
   packages = ["."]
+  pruneopts = ""
   revision = "47565b4f722fb6ceae66b95f853feed578a4a51c"
-  version = "v0.3.3"
 
 [[projects]]
+  digest = "1:602c5827bcd5eca47c041a39aff7b626dda114da57a0334a9230bdc5cf8ed3ed"
   name = "github.com/gogo/protobuf"
   packages = ["proto"]
+  pruneopts = ""
   revision = "1adfc126b41513cc696b209667c8656ea7aac67c"
   version = "v1.0.0"
 
 [[projects]]
   branch = "master"
+  digest = "1:fcc7794c93122911245b6e2de6853634598271f51ef68e330b314aaf4bf55786"
   name = "github.com/opencontainers/go-digest"
   packages = ["."]
+  pruneopts = ""
   revision = "c9281466c8b2f606084ac71339773efd177436e7"
 
 [[projects]]
+  digest = "1:0d08f7224705b1df80beee92ffbdc63ab13fd6f6eb80bf287735f9bc7e8b83eb"
   name = "github.com/opencontainers/image-spec"
   packages = [
     "specs-go",
-    "specs-go/v1"
+    "specs-go/v1",
   ]
+  pruneopts = ""
   revision = "d60099175f88c47cd379c4738d158884749ed235"
   version = "v1.0.1"
 
 [[projects]]
   branch = "master"
+  digest = "1:2a20983c41b9bc3ccc37daa9b6b7e26ade37dd8de4d302591e2e34d23376196a"
   name = "github.com/opencontainers/runc"
   packages = [
     "libcontainer/configs",
     "libcontainer/devices",
-    "libcontainer/user"
+    "libcontainer/user",
   ]
-  revision = "0cbfd8392fff2462701507296081e835b3b0b99a"
+  pruneopts = ""
+  revision = "21ac0862f2c695f7ecb55346401932a9ad8cc8d6"
 
 [[projects]]
   branch = "master"
+  digest = "1:4d27600c11688e202ce76264dc11c3e4b7f82bcc9ca43d1d3650fe4c0a8c263b"
   name = "github.com/opencontainers/runtime-spec"
   packages = ["specs-go"]
-  revision = "c102f0954e4a4faace7e5e4bc7054300788bc0a3"
+  pruneopts = ""
+  revision = "d810dbc60d8c5aeeb3d054bd1132fab2121968ce"
 
 [[projects]]
   branch = "master"
+  digest = "1:126b911657184193cc809c1398d3c8260ced1d58584da399fecc687b9138c486"
   name = "github.com/opencontainers/selinux"
   packages = [
     "go-selinux",
-    "go-selinux/label"
+    "go-selinux/label",
   ]
-  revision = "cca5d2ebbeb2bb2c17b4bae6ce29024e8110013d"
+  pruneopts = ""
+  revision = "b6fa367ed7f534f9ba25391cc2d467085dbb445a"
 
 [[projects]]
+  digest = "1:7365acd48986e205ccb8652cc746f09c8b7876030d53710ea6ef7d0bd0dcd7ca"
   name = "github.com/pkg/errors"
   packages = ["."]
+  pruneopts = ""
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
   version = "v0.8.0"
 
 [[projects]]
+  digest = "1:f2cc92b78b2f3b76ab0f9daddddd28627bcfcc6cacf119029aa3850082d95079"
   name = "github.com/sirupsen/logrus"
   packages = ["."]
+  pruneopts = ""
   revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
   version = "v1.0.5"
 
 [[projects]]
   branch = "master"
+  digest = "1:0904e489112021da2efe12504bed76a6009711f3bc88d6567f76ea3ee78eea07"
   name = "github.com/syndtr/gocapability"
   packages = ["capability"]
+  pruneopts = ""
   revision = "33e07d32887e1e06b7c025f27ce52f62c7990bc0"
 
 [[projects]]
   branch = "master"
+  digest = "1:e79c3d6b195477b429f017aaa02af135249bbdff31c9acbd8a93bb37a4ef7d3b"
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
-  revision = "2d027ae1dddd4694d54f7a8b6cbe78dca8720226"
+  pruneopts = ""
+  revision = "a49355c7e3f8fe157a85be2f77e6e269a0f89602"
 
 [[projects]]
   branch = "master"
+  digest = "1:50a6b805181a9b3bf2c879fcad6e6ff4cc643fc2287c321c1fbfc751755ea7eb"
   name = "golang.org/x/net"
   packages = [
     "context",
     "context/ctxhttp",
     "internal/socks",
-    "proxy"
+    "proxy",
   ]
-  revision = "2491c5de3490fced2f6cff376127c667efeed857"
+  pruneopts = ""
+  revision = "d0887baf81f4598189d4e12a37c6da86f0bba4d0"
 
 [[projects]]
   branch = "master"
+  digest = "1:880f5ae3ffdd8741fe179f0f70b46df57fcdd746f3a0e9d0e189bb6a241535e4"
   name = "golang.org/x/sys"
   packages = [
     "unix",
-    "windows"
+    "windows",
   ]
-  revision = "d0faeb539838e250bd0a9db4182d48d4a1915181"
+  pruneopts = ""
+  revision = "1b2967e3c290b7c545b3db0deeda16e9be4f98a2"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b9fe314918c309f7f700ffae91b747d790bb6e28cf0bfb8d31b042d91f72ee28"
+  input-imports = [
+    "github.com/docker/docker/api/types",
+    "github.com/docker/docker/api/types/container",
+    "github.com/docker/docker/client",
+    "github.com/docker/docker/daemon/caps",
+    "github.com/opencontainers/runc/libcontainer/configs",
+    "github.com/opencontainers/runc/libcontainer/devices",
+    "github.com/opencontainers/runc/libcontainer/user",
+    "github.com/opencontainers/runtime-spec/specs-go",
+    "github.com/opencontainers/selinux/go-selinux/label",
+    "github.com/sirupsen/logrus",
+    "golang.org/x/sys/unix",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1
