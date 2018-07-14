@@ -1,32 +1,28 @@
----
-  language: go
-  sudo: false
-  notifications:
-    email: true
-  go:
-    - 1.x
-    - tip
-  matrix:
-    allow_failures:
-      - go: tip
-    fast_finish: true
-  install:
-    - go get github.com/golang/lint/golint
-    - go get honnef.co/go/tools/cmd/staticcheck
-  script:
-    - make all
-    - make cover
-    - make release
-  after_success:
-    - bash <(curl -s https://codecov.io/bash)
-  deploy:
-    provider: releases
-    api_key:
-      secure: "mztBLzVFeipg3nqNp6a6MHUiwGoKdQT7Bf7Dy65AjJKaoCTXEiX9v/4C3eEeWVIMw0QA3Q/e4RczCwJPgaXfJvvafd/8wrymR+K6O2s5Me7IrMIYe8LZmAp7ugTzt36l0u0s0BdxXWPkaAW/JQfKaIcY9ycBxWC1IT6s57+x7aWoPZMWvztBy3bsQBpmzUIplRTlX48gRvsB6eP3K4O854NBHlkNgnAO7zQyNT5UN0OzaZ70oak+XWH8cyr0iOteKxirTrhW2Tdn6RBSaXaSdX4eHEOXaM3TS+GUwk9MOoiIATLH5q+c0mKaUZ8jl4BCDSQcRzopeVvIZ/mqDftJI38zMv6nZKhtsUcVlj0QO5VAC9XfOn1prANm/4MUOZdQ6uNveFvJf7cTAEryX/dYuCyxZBardhhUtozKfE+9Gr54rvGj7nQLiIChKARVE3kv0xvrCSh4BV2VUXKF7YM2TnTll8zyJHWXFtECQY1yD7ccZlEcOwrFiGbxN87tQIPMEnwg1hAVTuqdZfNli7jMmcYypv/LHg5rpNnEVMlNMBNleIul7yNlSDq643m1LK2JRueXQN7emq+lEaBN7WsWCZnDGwul4uaEWohrvVk/Wrib4xx40H0vG3Dy4MfAkOEBaA86SiVpS3EMIACY6ZXX3XHOhztxEY5BZ4u0HWpW81c="
-    file:
-      - cross/riddler-linux-amd64.md5
-      - cross/riddler-linux-amd64.sha256
-      - cross/riddler-linux-amd64
-    skip_cleanup: true
-    on:
-      tags: true
+language: go
+sudo: false
+go:
+  - 1.10.x
+before_install:
+  - go get github.com/golang/lint/golint
+  - go get honnef.co/go/tools/cmd/staticcheck
+jobs:
+  include:
+    - script: make all
+    - stage: Run Test Coverage
+      script: make cover
+      after_success: bash <(curl -s https://codecov.io/bash)
+    - stage: Build Release
+      script:
+        - make release
+        - echo "Deploying to GitHub releases ..."
+      deploy:
+        provider: releases
+        file:
+          - cross/riddler-linux-amd64.md5
+          - cross/riddler-linux-amd64.sha256
+          - cross/riddler-linux-amd64
+        skip_cleanup: true
+        on:
+          tags: true
+        api_key:
+          secure: "mztBLzVFeipg3nqNp6a6MHUiwGoKdQT7Bf7Dy65AjJKaoCTXEiX9v/4C3eEeWVIMw0QA3Q/e4RczCwJPgaXfJvvafd/8wrymR+K6O2s5Me7IrMIYe8LZmAp7ugTzt36l0u0s0BdxXWPkaAW/JQfKaIcY9ycBxWC1IT6s57+x7aWoPZMWvztBy3bsQBpmzUIplRTlX48gRvsB6eP3K4O854NBHlkNgnAO7zQyNT5UN0OzaZ70oak+XWH8cyr0iOteKxirTrhW2Tdn6RBSaXaSdX4eHEOXaM3TS+GUwk9MOoiIATLH5q+c0mKaUZ8jl4BCDSQcRzopeVvIZ/mqDftJI38zMv6nZKhtsUcVlj0QO5VAC9XfOn1prANm/4MUOZdQ6uNveFvJf7cTAEryX/dYuCyxZBardhhUtozKfE+9Gr54rvGj7nQLiIChKARVE3kv0xvrCSh4BV2VUXKF7YM2TnTll8zyJHWXFtECQY1yD7ccZlEcOwrFiGbxN87tQIPMEnwg1hAVTuqdZfNli7jMmcYypv/LHg5rpNnEVMlNMBNleIul7yNlSDq643m1LK2JRueXQN7emq+lEaBN7WsWCZnDGwul4uaEWohrvVk/Wrib4xx40H0vG3Dy4MfAkOEBaA86SiVpS3EMIACY6ZXX3XHOhztxEY5BZ4u0HWpW81c="
