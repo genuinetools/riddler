@@ -1,6 +1,8 @@
 # riddler
 
-[![Travis CI](https://travis-ci.org/genuinetools/riddler.svg?branch=master)](https://travis-ci.org/genuinetools/riddler)
+[![Travis CI](https://img.shields.io/travis/genuinetools/riddler.svg?style=for-the-badge)](https://travis-ci.org/genuinetools/riddler)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-5272B4.svg?style=for-the-badge)](https://godoc.org/github.com/genuinetools/riddler)
+[![Github All Releases](https://img.shields.io/github/downloads/genuinetools/riddler/total.svg?style=for-the-badge)](https://github.com/genuinetools/riddler/releases)
 
 
 `docker inspect` to
@@ -40,6 +42,8 @@ $ sudo file /var/run/docker/libcontainerd/d4da95779a3c.../config.json
 ## Installation
 
 #### Binaries
+
+For installation instructions from binaries please visit the [Releases Page](https://github.com/genuinetools/riddler/releases).
 
 - **linux** [amd64](https://github.com/genuinetools/riddler/releases/download/v0.6.1/riddler-linux-amd64)
 

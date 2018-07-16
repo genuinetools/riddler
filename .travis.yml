@@ -18,9 +18,9 @@ jobs:
       deploy:
         provider: releases
         file:
+          - cross/riddler-linux-amd64
           - cross/riddler-linux-amd64.md5
           - cross/riddler-linux-amd64.sha256
-          - cross/riddler-linux-amd64
         skip_cleanup: true
         on:
           tags: true
