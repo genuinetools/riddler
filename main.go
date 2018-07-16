@@ -3,49 +3,42 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"os/signal"
 	"runtime"
 	"strings"
+	"syscall"
 
 	"github.com/docker/docker/client"
+	"github.com/genuinetools/pkg/cli"
 	"github.com/genuinetools/riddler/parse"
 	"github.com/genuinetools/riddler/version"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sirupsen/logrus"
 )
 
+//
 const (
-	// BANNER is what is printed for help/info output
-	BANNER = `      _     _     _ _
- _ __(_) __| | __| | | ___ _ __
-| '__| |/ _` + "`" + ` |/ _` + "`" + ` | |/ _ \ '__|
-| |  | | (_| | (_| | |  __/ |
-|_|  |_|\__,_|\__,_|_|\___|_|
-
- docker inspect to opencontainers runc spec generator.
- Version: %s
- Build: %s
-
-`
 	specConfig = "config.json"
 )
 
 var (
-	arg        string
 	bundle     string
 	dockerHost string
-	hooks      specs.Hooks
-	hookflags  stringSlice
 	force      bool
-	idroot     uint32
-	idlen      uint32
+
+	hooks     specs.Hooks
+	hookflags stringSlice
+
+	idroot, idlen       uint32
+	idrootVar, idlenVar int
 
 	debug bool
-	vrsn  bool
 )
 
 // stringSlice is a slice of strings
@@ -90,99 +83,91 @@ func (s stringSlice) ParseHooks() (hooks specs.Hooks, err error) {
 	return hooks, nil
 }
 
-func init() {
-	var idrootVar, idlenVar int
-	// parse flags
-	flag.StringVar(&dockerHost, "host", "unix:///var/run/docker.sock", "Docker Daemon socket(s) to connect to")
-	flag.StringVar(&bundle, "bundle", "", "Path to the root of the bundle directory")
-	flag.Var(&hookflags, "hook", "Hooks to prefill into spec file. (ex. --hook prestart:netns)")
-
-	flag.IntVar(&idrootVar, "idroot", 0, "Root UID/GID for user namespaces")
-	flag.IntVar(&idlenVar, "idlen", 0, "Length of UID/GID ID space ranges for user namespaces")
-
-	flag.BoolVar(&force, "force", false, "force overwrite existing files")
-	flag.BoolVar(&force, "f", false, "force overwrite existing files")
-
-	flag.BoolVar(&vrsn, "version", false, "print version and exit")
-	flag.BoolVar(&vrsn, "v", false, "print version and exit (shorthand)")
-	flag.BoolVar(&debug, "d", false, "run in debug mode")
-
-	flag.Usage = func() {
-		fmt.Fprint(os.Stderr, fmt.Sprintf(BANNER, version.VERSION, version.GITCOMMIT))
-		flag.PrintDefaults()
-	}
-
-	flag.Parse()
-	idroot = uint32(idrootVar)
-	idlen = uint32(idlenVar)
-
-	if vrsn {
-		fmt.Printf("riddler version %s, build %s", version.VERSION, version.GITCOMMIT)
-		os.Exit(0)
-	}
-
-	if flag.NArg() < 1 {
-		usageAndExit("Pass the container name or ID.", 1)
-	}
-
-	// parse the arg
-	arg = flag.Args()[0]
-	if arg == "help" {
-		usageAndExit("", 0)
-	}
-
-	if arg == "version" {
-		fmt.Printf("riddler version %s, build %s", version.VERSION, version.GITCOMMIT)
-		os.Exit(0)
-	}
-
-	// set log level
-	if debug {
-		logrus.SetLevel(logrus.DebugLevel)
-	}
-
-	var err error
-	hooks, err = hookflags.ParseHooks()
-	if err != nil {
-		logrus.Fatal(err)
-	}
-}
-
 func main() {
-	defaultHeaders := map[string]string{"User-Agent": "engine-api-cli-1.0"}
-	cli, err := client.NewClient(dockerHost, "", nil, defaultHeaders)
-	if err != nil {
-		panic(err)
+	// Create a new cli program.
+	p := cli.NewProgram()
+	p.Name = "riddler"
+	p.Description = "A tool to convert docker inspect to the opencontainers runc spec"
+
+	// Set the GitCommit and Version.
+	p.GitCommit = version.GITCOMMIT
+	p.Version = version.VERSION
+
+	// Setup the global flags.
+	p.FlagSet = flag.NewFlagSet("global", flag.ExitOnError)
+	p.FlagSet.StringVar(&dockerHost, "host", "unix:///var/run/docker.sock", "Docker Daemon socket(s) to connect to")
+	p.FlagSet.StringVar(&bundle, "bundle", "", "Path to the root of the bundle directory")
+	p.FlagSet.Var(&hookflags, "hook", "Hooks to prefill into spec file. (ex. --hook prestart:netns)")
+
+	p.FlagSet.IntVar(&idrootVar, "idroot", 0, "Root UID/GID for user namespaces")
+	p.FlagSet.IntVar(&idlenVar, "idlen", 0, "Length of UID/GID ID space ranges for user namespaces")
+
+	p.FlagSet.BoolVar(&force, "force", false, "force overwrite existing files")
+	p.FlagSet.BoolVar(&force, "f", false, "force overwrite existing files")
+
+	p.FlagSet.BoolVar(&debug, "d", false, "enable debug logging")
+
+	// Set the before function.
+	p.Before = func(ctx context.Context) error {
+		// Set the log level.
+		if debug {
+			logrus.SetLevel(logrus.DebugLevel)
+		}
+
+		idroot = uint32(idrootVar)
+		idlen = uint32(idlenVar)
+
+		if p.FlagSet.NArg() < 1 {
+			return errors.New("Pass the container name or ID")
+		}
+
+		var err error
+		hooks, err = hookflags.ParseHooks()
+		return err
 	}
 
-	// get container info
-	c, err := cli.ContainerInspect(context.Background(), arg)
-	if err != nil {
-		logrus.Fatalf("inspecting container (%s) failed: %v", arg, err)
+	// Set the main program action.
+	p.Action = func(ctx context.Context, args []string) error {
+		// On ^C, or SIGTERM handle exit.
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt)
+		signal.Notify(c, syscall.SIGTERM)
+		go func() {
+			for sig := range c {
+				logrus.Infof("Received %s, exiting.", sig.String())
+				os.Exit(0)
+			}
+		}()
+
+		defaultHeaders := map[string]string{"User-Agent": "engine-api-cli-1.0"}
+		cli, err := client.NewClient(dockerHost, "", nil, defaultHeaders)
+		if err != nil {
+			panic(err)
+		}
+
+		// get container info
+		ctr, err := cli.ContainerInspect(ctx, args[0])
+		if err != nil {
+			logrus.Fatalf("inspecting container (%s) failed: %v", args[0], err)
+		}
+
+		spec, err := parse.Config(ctr, runtime.GOOS, runtime.GOARCH, defaultCapabilities(), idroot, idlen)
+		if err != nil {
+			logrus.Fatalf("Spec config conversion for %s failed: %v", args[0], err)
+		}
+
+		// fill in hooks, if passed through command line
+		spec.Hooks = &hooks
+		if err := writeConfig(spec); err != nil {
+			logrus.Fatal(err)
+		}
+
+		fmt.Printf("%s has been saved.\n", specConfig)
+		return nil
 	}
 
-	spec, err := parse.Config(c, runtime.GOOS, runtime.GOARCH, defaultCapabilities(), idroot, idlen)
-	if err != nil {
-		logrus.Fatalf("Spec config conversion for %s failed: %v", arg, err)
-	}
-
-	// fill in hooks, if passed through command line
-	spec.Hooks = &hooks
-	if err := writeConfig(spec); err != nil {
-		logrus.Fatal(err)
-	}
-
-	fmt.Printf("%s has been saved.\n", specConfig)
-}
-
-func usageAndExit(message string, exitCode int) {
-	if message != "" {
-		fmt.Fprintf(os.Stderr, message)
-		fmt.Fprintf(os.Stderr, "\n\n")
-	}
-	flag.Usage()
-	fmt.Fprintf(os.Stderr, "\n")
-	os.Exit(exitCode)
+	// Run our program.
+	p.Run()
 }
 
 func checkNoFile(name string) error {

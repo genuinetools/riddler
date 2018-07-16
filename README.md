@@ -5,9 +5,17 @@
 [![Github All Releases](https://img.shields.io/github/downloads/genuinetools/riddler/total.svg?style=for-the-badge)](https://github.com/genuinetools/riddler/releases)
 
 
-`docker inspect` to
+A tool to convert `docker inspect` to the
 [opencontainers/specs](https://github.com/opencontainers/specs)
-/[opencontainers/runc](https://github.com/opencontainers/runc) generator.
+and [opencontainers/runc](https://github.com/opencontainers/runc).
+
+* [NOTE](README.md#note)
+ * [Installation](README.md#installation)
+      * [Binaries](README.md#binaries)
+      * [Via Go](README.md#via-go)
+ * [Usage](README.md#usage)
+ * [Installation](README.md#installation-1)
+   * [TODO](README.md#todo)
 
 ## NOTE
 
@@ -45,39 +53,33 @@ $ sudo file /var/run/docker/libcontainerd/d4da95779a3c.../config.json
 
 For installation instructions from binaries please visit the [Releases Page](https://github.com/genuinetools/riddler/releases).
 
-- **linux** [amd64](https://github.com/genuinetools/riddler/releases/download/v0.6.1/riddler-linux-amd64)
-
 #### Via Go
 
-```bash
+```console
 $ go get github.com/genuinetools/riddler
 ```
 
 ## Usage
 
 ```console
-$ riddler --help
-      _     _     _ _
- _ __(_) __| | __| | | ___ _ __
-| '__| |/ _` |/ _` | |/ _ \ '__|
-| |  | | (_| | (_| | |  __/ |
-|_|  |_|\__,_|\__,_|_|\___|_|
- docker inspect to opencontainers runc spec generator.
- Version: v0.6.1
+$ riddler -h
+riddler -  A tool to convert docker inspect to the opencontainers runc spec.
 
- -bundle string
-        Path to the root of the bundle directory
-  -d    run in debug mode
-  -f    force overwrite existing files
-  -force
-        force overwrite existing files
-  -hook value
-        Hooks to prefill into spec file. (ex. --hook prestart:netns) (default [])
-  -host string
-        Docker Daemon socket(s) to connect to (default "unix:///var/run/docker.sock")
-  -v    print version and exit (shorthand)
-  -version
-        print version and exit
+Usage: riddler <command>
+
+Flags:
+
+  --host       Docker Daemon socket(s) to connect to (default: unix:///var/run/docker.sock)
+  --idlen      Length of UID/GID ID space ranges for user namespaces (default: 0)
+  --idroot     Root UID/GID for user namespaces (default: 0)
+  --bundle     Path to the root of the bundle directory (default: <none>)
+  -d           enable debug logging (default: false)
+  -f, --force  force overwrite existing files (default: false)
+  --hook       Hooks to prefill into spec file. (ex. --hook prestart:netns) (default: [])
+
+Commands:
+
+  version  Show the version information.
 ```
 
 ## Installation
