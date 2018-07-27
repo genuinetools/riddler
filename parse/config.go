@@ -172,7 +172,7 @@ func Config(c types.ContainerJSON, osType, architecture string, capabilities []s
 					Limit:            int64ptr(c.HostConfig.Resources.Memory),
 					Reservation:      int64ptr(c.HostConfig.Resources.MemoryReservation),
 					Swap:             int64ptr(c.HostConfig.Resources.MemorySwap),
-					Swappiness:       uint64ptr(*c.HostConfig.Resources.MemorySwappiness),
+					Swappiness:       uint64ptrfptr(c.HostConfig.Resources.MemorySwappiness),
 					Kernel:           int64ptr(c.HostConfig.Resources.KernelMemory),
 					DisableOOMKiller: c.HostConfig.Resources.OomKillDisable,
 				},
