@@ -58,10 +58,9 @@ func int64ptr(i int64) *int64 {
 
 func uint64ptrfptr(i *int64) *uint64 {
         if (i == nil) {
-			return nil;
-        } else {
-			return uint64ptr(*i);
+		return nil;
         }
+	return uint64ptr(*i);
 }
 
 func getDevicesFromPath(deviceMapping containertypes.DeviceMapping) (devs []specs.LinuxDevice, dc []specs.LinuxDeviceCgroup, err error) {
