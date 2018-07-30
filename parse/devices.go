@@ -57,9 +57,9 @@ func int64ptr(i int64) *int64 {
 }
 
 func uint64ptrfptr(i *int64) *uint64 {
-        if (i == nil) {
+	if (i == nil) {
 		return nil;
-        }
+	}
 	return uint64ptr(*i);
 }
 
