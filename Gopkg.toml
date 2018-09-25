@@ -30,6 +30,7 @@
 
 [[constraint]]
   name = "github.com/docker/docker"
+  source = "github.com/moby/moby"
   branch = "master"
 
 [[constraint]]

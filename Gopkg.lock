@@ -47,6 +47,7 @@
   ]
   pruneopts = "NUT"
   revision = "a9c061deec0f8d452e4feb7258046d5e32a1143b"
+  source = "github.com/moby/moby"
 
 [[projects]]
   branch = "master"
