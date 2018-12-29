@@ -9,13 +9,11 @@ A tool to convert `docker inspect` to the
 [opencontainers/specs](https://github.com/opencontainers/specs)
 and [opencontainers/runc](https://github.com/opencontainers/runc).
 
-* [NOTE](README.md#note)
- * [Installation](README.md#installation)
-      * [Binaries](README.md#binaries)
-      * [Via Go](README.md#via-go)
- * [Usage](README.md#usage)
- * [Installation](README.md#installation-1)
-   * [TODO](README.md#todo)
+**Table of Contents**
+
+<!-- toc -->
+
+<!-- tocstop -->
 
 ## NOTE
 
