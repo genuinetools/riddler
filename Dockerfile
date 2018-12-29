@@ -5,6 +5,7 @@ ENV PATH /go/bin:/usr/local/go/bin:$PATH
 ENV GOPATH /go
 
 RUN	apk add --no-cache \
+	bash \
 	ca-certificates
 
 COPY . /go/src/github.com/genuinetools/riddler
@@ -14,8 +15,8 @@ RUN set -x \
 		git \
 		gcc \
 		libc-dev \
-		linux-headers \
 		libgcc \
+		linux-headers \
 		make \
 	&& cd /go/src/github.com/genuinetools/riddler \
 	&& make static \
