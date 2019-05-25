@@ -217,7 +217,7 @@ func Config(c types.ContainerJSON, osType, architecture string, capabilities []s
 	for _, group := range c.HostConfig.GroupAdd {
 		g, err := user.LookupGroup(group)
 		if err != nil {
-			return nil, fmt.Errorf("Looking up group (%s) failed: %v", group, err)
+			return nil, fmt.Errorf("looking up group (%s) failed: %v", group, err)
 		}
 		config.Process.User.AdditionalGids = append(config.Process.User.AdditionalGids, uint32(g.Gid))
 	}

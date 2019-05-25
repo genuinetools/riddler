@@ -104,7 +104,7 @@ func getDevicesFromPath(deviceMapping containertypes.DeviceMapping) (devs []spec
 		return devs, dc, nil
 	}
 
-	return devs, dc, fmt.Errorf("Gathering device information while adding custom device (%s) failed: %s", deviceMapping.PathOnHost, err)
+	return devs, dc, fmt.Errorf("gathering device information while adding custom device (%s) failed: %s", deviceMapping.PathOnHost, err)
 }
 
 // deviceFromPath takes the path to a device and it's cgroup_permissions(which cannot be easily queried) and looks up the information about a linux device.

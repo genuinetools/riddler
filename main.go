@@ -118,7 +118,7 @@ func main() {
 		idlen = uint32(idlenVar)
 
 		if p.FlagSet.NArg() < 1 {
-			return errors.New("Pass the container name or ID")
+			return errors.New("pass the container name or ID")
 		}
 
 		var err error
@@ -173,7 +173,7 @@ func main() {
 func checkNoFile(name string) error {
 	_, err := os.Stat(name)
 	if err == nil {
-		return fmt.Errorf("File %s exists. Remove it first", name)
+		return fmt.Errorf("file %s exists, remove it", name)
 	}
 	if !os.IsNotExist(err) {
 		return err
