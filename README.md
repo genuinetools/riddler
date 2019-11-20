@@ -1,6 +1,7 @@
 # riddler
 
-[![Travis CI](https://img.shields.io/travis/genuinetools/riddler.svg?style=for-the-badge)](https://travis-ci.org/genuinetools/riddler)
+![make-all](https://github.com/genuinetools/riddler/workflows/make%20all/badge.svg)
+![make-image](https://github.com/genuinetools/riddler/workflows/make%20image/badge.svg)
 [![GoDoc](https://img.shields.io/badge/godoc-reference-5272B4.svg?style=for-the-badge)](https://godoc.org/github.com/genuinetools/riddler)
 [![Github All Releases](https://img.shields.io/github/downloads/genuinetools/riddler/total.svg?style=for-the-badge)](https://github.com/genuinetools/riddler/releases)
 
@@ -9,19 +10,8 @@ A tool to convert `docker inspect` to the
 [opencontainers/specs](https://github.com/opencontainers/specs)
 and [opencontainers/runc](https://github.com/opencontainers/runc).
 
-**Table of Contents**
-
-<!-- toc -->
-
-- [NOTE](#note)
-- [Installation](#installation)
-    + [Binaries](#binaries)
-    + [Via Go](#via-go)
-- [Usage](#usage)
-- [Installation](#installation-1)
-  * [TODO](#todo)
-
-<!-- tocstop -->
+<!-- START doctoc -->
+<!-- END doctoc -->
 
 ## NOTE
 
