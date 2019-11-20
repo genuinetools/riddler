@@ -10,8 +10,19 @@ A tool to convert `docker inspect` to the
 [opencontainers/specs](https://github.com/opencontainers/specs)
 and [opencontainers/runc](https://github.com/opencontainers/runc).
 
-<!-- START doctoc -->
-<!-- END doctoc -->
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**
+
+- [NOTE](#note)
+- [Installation](#installation)
+    - [Binaries](#binaries)
+    - [Via Go](#via-go)
+- [Usage](#usage)
+- [Installation](#installation-1)
+  - [TODO](#todo)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## NOTE
 
